@@ -81,6 +81,7 @@ def get_predictor(model_config, Model_Path):
         input_names=input_vas,
         output_names=output_vas
     )
+    # ModelExporter(pred_config).export_compact('compact_graph.pb')
     predictor = OfflinePredictor(pred_config)
     return predictor
 
@@ -96,9 +97,10 @@ def pred_saveres(eval_config, res, filename, kp_savenum=-1):
     elif eval_config.perform_nms:
         xyz = res[:, 0:3]
         attention = 1 - res[:, -1]
-        num_keypoints, max_indices = single_nms(xyz, attention, nms_radius=eval_config.nms_rad,
-                                                min_response_ratio=eval_config.nms_min_ratio,
-                                                max_keypoints=eval_config.nms_max_kp)
+        num_keypoints, max_indices = single_nms(
+            xyz, attention, nms_radius=eval_config.nms_rad,
+            min_response_ratio=eval_config.nms_min_ratio,
+            max_keypoints=eval_config.nms_max_kp)
         xyzfeatatt_nms = res[max_indices, :]
         savename = os.path.join(eval_config.save_dir, '{}_nms_{}'.format(
             filename, ext_name))
