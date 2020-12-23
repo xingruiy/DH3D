@@ -14,19 +14,20 @@
 # limitations under the License.
 
 
-from core.utils import mkdir_p, single_nms
-from core.model import DH3D
-from core.datasets import Local_test_dataset
-from core.configs import dotdict
 import argparse
 import json
 import os
 import sys
 
 import numpy as np
+from core.configs import dotdict
+from core.datasets import Local_test_dataset
+from core.model import DH3D
+from core.utils import mkdir_p, single_nms
 from tensorpack.dataflow import BatchData
 from tensorpack.predict import OfflinePredictor, PredictConfig
 from tensorpack.tfutils import get_model_loader
+from tensorpack.tfutils.export import ModelExporter
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
@@ -37,7 +38,7 @@ sys.path.append(os.path.dirname(BASE_DIR))
 def get_eval_oxford_data(cfg={}):
     querybatch = cfg.batch_size
     totalbatch = querybatch
-    df = Local_test_dataset(basedir='./demo_data', dim=3,
+    df = Local_test_dataset(basedir='evaluate/local_eval/demo_data', dim=3,
                             numpts=cfg.get('num_points'),
                             knn_require=cfg.get('knn_num'),
                             )
@@ -69,11 +70,13 @@ def get_predictor(model_config, Model_Path):
     else:
         output_vas = ['xyz_feat']
 
-    input_vas = ['pointclouds']
+    input_vas = ['pointclouds/pointclouds']
+    model = DH3D(model_config)
     if model_config.num_points > 8192:
-        input_vas.append('knn_inds')
+        input_vas.append('knn_inds/knn_inds')
+        # input_vas = ['knn_inds/knn_inds']
     pred_config = PredictConfig(
-        model=DH3D(model_config),
+        model=model,
         session_init=get_model_loader(Model_Path),
         input_names=input_vas,
         output_names=output_vas
@@ -164,9 +167,9 @@ if __name__ == '__main__':
     parser.add_argument(
         '--gpu', help='comma separated list of GPU(s) to use.', default='0')
     parser.add_argument('--save_dir', type=str,
-                        default='./demo_data/res_local')
+                        default='evaluate/local_eval/demo_data/res_local')
     parser.add_argument('--ModelPath', type=str, help='Model to load (for evaluation)',
-                        default='../../models/local/localmodel')
+                        default='models/local/localmodel')
     parser.add_argument('--dataset', type=str,
                         help='oxford_lidar or oxford_dso', default='oxford_lidar')
     parser.add_argument('--save_all', action='store_true',

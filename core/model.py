@@ -170,7 +170,7 @@ class DH3D(ModelDesc):
                 a=knn_inds, perm=[0, 2, 1])  # batch, k. numpts
         else:
             self.knn_indices, distances = knn_bruteforce(
-                tf.transpose(a=points, perm=[0, 2, 1]), k=self.config.knn_num)
+                tf.transpose(points, perm=[0, 2, 1]), k=self.config.knn_num)
 
         if self.config.sampled_kpnum > 0:
             sample_nodes_concat = tf.concat(
@@ -282,7 +282,3 @@ class DH3D(ModelDesc):
             decay_rate=self.config.decay_rate, staircase=True, name='learning_rate')
         tf.compat.v1.summary.scalar('lr', lr)
         return tf.compat.v1.train.AdamOptimizer(lr)
-
-
-if __name__ == '__main__':
-    model = DH3D()
