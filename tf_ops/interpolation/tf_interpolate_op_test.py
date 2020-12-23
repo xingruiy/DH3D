@@ -1,6 +1,7 @@
-import tensorflow as tf
 import numpy as np
-from tf_interpolate import three_nn, three_interpolate
+import tensorflow as tf
+
+from tf_interpolate import three_interpolate, three_nn
 
 
 class GroupPointTest(tf.test.TestCase):
@@ -9,7 +10,8 @@ class GroupPointTest(tf.test.TestCase):
 
     def test_grad(self):
         with self.test_session():
-            points = tf.constant(np.random.random((1, 8, 16)).astype('float32'))
+            points = tf.constant(np.random.random(
+                (1, 8, 16)).astype('float32'))
             print(points)
             xyz1 = tf.constant(np.random.random((1, 128, 3)).astype('float32'))
             xyz2 = tf.constant(np.random.random((1, 8, 3)).astype('float32'))
@@ -17,7 +19,8 @@ class GroupPointTest(tf.test.TestCase):
             weight = tf.ones_like(dist) / 3.0
             interpolated_points = three_interpolate(points, idx, weight)
             print(interpolated_points)
-            err = tf.test.compute_gradient_error(points, (1, 8, 16), interpolated_points, (1, 128, 16))
+            err = tf.test.compute_gradient_error(
+                points, (1, 8, 16), interpolated_points, (1, 128, 16))
             print(err)
             self.assertLess(err, 1e-4)
 

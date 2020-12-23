@@ -35,7 +35,7 @@ class ConfigFactory(object):
     def basic_config(self):
         config = {
 
-            ###train
+            # train
             'training_local': True,
             'extract_global': False,
             'detection': False,  # set to False when training local for the first few epochs
@@ -54,12 +54,12 @@ class ConfigFactory(object):
             'add_weight_decay': True,
             'train_weight_decay': 1e-5,
 
-            ### model parameters
+            # model parameters
             'init_feat_dim': 32,
             'featdim': 128,
             'knn_num': 8,
 
-            ###data
+            # data
             'num_points': 8192,
             'batch_size': 10,
             'num_pos': 1,
@@ -70,7 +70,7 @@ class ConfigFactory(object):
             'sampled_kpnum': 512,
             'data_basedir': '/usr/stud/duj/rbc/fixedgrid_lidarpc',
 
-            ###  loss
+            # loss
             'add_local_loss': True,
             'add_det_loss': False,
             'add_global_loss': False,
@@ -105,7 +105,7 @@ class ConfigFactory(object):
         cfg = self.basic_config()
         cfg = dotdict(cfg)
 
-        ## for global
+        # for global
         cfg.training_local = False
         cfg.detection = False
         cfg.extract_global = True

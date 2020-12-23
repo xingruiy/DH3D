@@ -49,7 +49,8 @@ class Jitter(Augmentation):
 
     def apply(self, data):
         assert (self.clip > 0)
-        jittered_data = np.clip(self.sigma * np.random.randn(*data.shape), -1 * self.clip, self.clip)
+        jittered_data = np.clip(
+            self.sigma * np.random.randn(*data.shape), -1 * self.clip, self.clip)
         jittered_data += data
 
         return jittered_data
@@ -111,7 +112,8 @@ class RotateSmall(Augmentation):
         self.angle_clip = angle_clip
 
     def apply(self, data):
-        angles = np.clip(self.angle_sigma * np.random.randn(3), -self.angle_clip, self.angle_clip)
+        angles = np.clip(self.angle_sigma * np.random.randn(3), -
+                         self.angle_clip, self.angle_clip)
         Rx = np.array([[1, 0, 0],
                        [0, np.cos(angles[0]), -np.sin(angles[0])],
                        [0, np.sin(angles[0]), np.cos(angles[0])]])

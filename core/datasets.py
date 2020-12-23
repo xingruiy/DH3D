@@ -14,24 +14,22 @@
 # limitations under the License.
 
 
-import sys
-import os
+from utils import *
+from augment import *
 import glob
+import os
 import random
-from sklearn.neighbors import KDTree
+import sys
+
 import numpy as np
-
+from sklearn.neighbors import KDTree
 from tensorpack import DataFlow, RNGDataFlow
-from tensorpack.dataflow import TestDataSpeed, BatchData, PrefetchDataZMQ
+from tensorpack.dataflow import BatchData, PrefetchDataZMQ, TestDataSpeed
 from tensorpack.utils import logger
-
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(BASE_DIR)
 sys.path.append(os.path.dirname(BASE_DIR))
-
-from utils import *
-from augment import *
 
 
 # local train
@@ -50,7 +48,8 @@ def get_train_global_triplet(cfg={}):
     if 'data_aug' in cfg:
         augmentation = cfg.data_aug
     df = Global_train_dataset_triplet(basedir=cfg.data_basedir,
-                                      train_file=os.path.join(cfg.data_basedir, 'oxford_train_global_gt.pickle'),
+                                      train_file=os.path.join(
+                                          cfg.data_basedir, 'oxford_train_global_gt.pickle'),
                                       posnum=cfg.num_pos, negnum=cfg.num_neg, other_neg=cfg.other_neg,
                                       aug=augmentation)
     df = BatchData(df, cfg.batch_size)
@@ -82,9 +81,11 @@ class Local_test_dataset(DataFlow):
         ori_num = cloud.shape[0]
         if ori_num != self.numpts:
             # downsample is not required if the pointcloud is already processed by the voxelsize around 0.2
-            cloud, ori_num = get_fixednum_pcd(cloud, self.numpts, randsample=False, need_downsample=True)
+            cloud, ori_num = get_fixednum_pcd(
+                cloud, self.numpts, randsample=False, need_downsample=True)
         else:
-            choice_idx = np.random.choice(cloud.shape[0], self.numpts, replace=False)
+            choice_idx = np.random.choice(
+                cloud.shape[0], self.numpts, replace=False)
             cloud = cloud[choice_idx, :]
 
         name = os.path.basename(pcfile)
@@ -117,7 +118,8 @@ class Local_train_dataset_selfpair(RNGDataFlow):
         return len(self.dict.keys())
 
     def process_point_cloud(self, cloud):
-        cloud, _ = get_fixednum_pcd(cloud, self.numpts, randsample=True, need_downsample=False, sortby_dis=False)
+        cloud, _ = get_fixednum_pcd(
+            cloud, self.numpts, randsample=True, need_downsample=False, sortby_dis=False)
         # augmentation
         for a in self.augmentation:
             cloud = a.apply(cloud)
@@ -130,8 +132,9 @@ class Local_train_dataset_selfpair(RNGDataFlow):
         pc1 = self.process_point_cloud(cloud[:, 0:3])  # augmentation
         pc2 = self.process_point_cloud(cloud[:, 0:3])  # augmentation
 
-        ## 1D rotate
-        rotation_angle = np.random.uniform(low=-self.rot_maxv, high=self.rot_maxv)
+        # 1D rotate
+        rotation_angle = np.random.uniform(
+            low=-self.rot_maxv, high=self.rot_maxv)
         cosval = np.cos(rotation_angle)
         sinval = np.sin(rotation_angle)
         rotation_matrix = np.array([[cosval, sinval, 0],
@@ -141,9 +144,11 @@ class Local_train_dataset_selfpair(RNGDataFlow):
 
         # sample
         farthest_sampler = FarthestSampler()
-        pcd1_subset_ind = np.random.choice(pc1.shape[0], pc1.shape[0] // 2, replace=False)
+        pcd1_subset_ind = np.random.choice(
+            pc1.shape[0], pc1.shape[0] // 2, replace=False)
         pcd1_subset = pc1[list(pcd1_subset_ind), :]
-        anc_subset_node_inds = farthest_sampler.sample(pcd1_subset, self.sample_nodes)
+        anc_subset_node_inds = farthest_sampler.sample(
+            pcd1_subset, self.sample_nodes)
         anc_node_inds = pcd1_subset_ind[anc_subset_node_inds]
         tree = KDTree(pc2)
         _, pos_node_inds = tree.query(pc1[anc_node_inds, :], k=1)
@@ -180,12 +185,12 @@ class Global_train_dataset_triplet(RNGDataFlow):
     def __len__(self):
         return len(self.dict.keys())
 
-
     def loadPC(self, ind):
         pcfile = self.dict[ind]['query']
         pcfile = os.path.join(self.basedir, pcfile + '.bin')
         cloud = load_single_pcfile(pcfile, dim=self.dim)
-        cloud, _ = get_fixednum_pcd(cloud, self.numpts, randsample=True, need_downsample=False, sortby_dis=True)
+        cloud, _ = get_fixednum_pcd(
+            cloud, self.numpts, randsample=True, need_downsample=False, sortby_dis=True)
         for a in self.augmentation:
             cloud = a.apply(cloud)
         return cloud
@@ -210,9 +215,11 @@ class Global_train_dataset_triplet(RNGDataFlow):
             nonnegtives = self.dict[i]['nonnegtives']
             if len(positives) < self.pos_num:
                 continue
-            posind = [positives[i] for i in np.random.choice(len(positives), size=self.pos_num, replace=False)]
+            posind = [positives[i] for i in np.random.choice(
+                len(positives), size=self.pos_num, replace=False)]
             possible_negs = list(set(self.dict.keys()) - set(nonnegtives))
-            negind = [possible_negs[i] for i in np.random.choice(len(possible_negs), size=self.neg_num, replace=False)]
+            negind = [possible_negs[i] for i in np.random.choice(
+                len(possible_negs), size=self.neg_num, replace=False)]
 
             query_pcd = self.loadPC(i)
             pos_pcds = self.loadPC_list(posind)
@@ -266,7 +273,8 @@ class Global_test_dataset(RNGDataFlow):
     def __iter__(self):
         for i in range(self.size):
             name = self.eval_list[i]
-            pcd = load_single_pcfile(os.path.join(self.basedir, name), dim=self.pcd_dim, dtype=self.pcd_dtype)
+            pcd = load_single_pcfile(os.path.join(
+                self.basedir, name), dim=self.pcd_dim, dtype=self.pcd_dtype)
 
             if pcd.shape[0] != self.numpts:
                 pcd, ori_num = get_fixednum_pcd(pcd, self.numpts, randsample=True, need_downsample=False,

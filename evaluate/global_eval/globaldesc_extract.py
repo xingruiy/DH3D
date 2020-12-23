@@ -15,23 +15,24 @@
 
 
 import argparse
-import sys
-import numpy as np
-import os
 import json
+import os
 import shutil
+import sys
 
-from tensorpack.predict import PredictConfig, OfflinePredictor
-from tensorpack.tfutils import get_model_loader
+import numpy as np
+from core.configs import dotdict
+from core.datasets import Global_test_dataset
+from core.model import DH3D
+from core.utils import mkdir_p
 from tensorpack.dataflow import BatchData
+from tensorpack.predict import OfflinePredictor, PredictConfig
+from tensorpack.tfutils import get_model_loader
+
+from evaluation_retrieval import GlobalDesc_eval
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(os.path.dirname(CURRENT_DIR)))
-from core.model import DH3D
-from core.utils import mkdir_p
-from core.datasets import Global_test_dataset
-from core.configs import dotdict
-from evaluation_retrieval import GlobalDesc_eval
 
 
 def get_eval_global_testdata(cfg, data_path, ref_gt_file):
@@ -41,7 +42,8 @@ def get_eval_global_testdata(cfg, data_path, ref_gt_file):
     other_neg = 1 if cfg.other_neg else 0
     totalbatch = querybatch * (pos + neg + other_neg + 1)
 
-    df = Global_test_dataset(basedir=data_path, test_file=os.path.join(data_path, ref_gt_file))
+    df = Global_test_dataset(
+        basedir=data_path, test_file=os.path.join(data_path, ref_gt_file))
     df = BatchData(df, totalbatch, remainder=True)
 
     df.reset_state()
@@ -75,7 +77,8 @@ def eval_retrieval(evalargs):
     predictor = OfflinePredictor(pred_config)
 
     # Data:
-    df, totalbatch = get_eval_global_testdata(model_configs, evalargs.data_path, evalargs.ref_gt_file)
+    df, totalbatch = get_eval_global_testdata(
+        model_configs, evalargs.data_path, evalargs.ref_gt_file)
 
     # Predict:
     pcdnum = 0
@@ -84,7 +87,8 @@ def eval_retrieval(evalargs):
         if totalbatch > batch:
             numpts = pcds.shape[1]
             pcddim = pcds.shape[2]
-            padzeros = np.zeros([totalbatch - batch, numpts, pcddim], dtype=np.float32)
+            padzeros = np.zeros(
+                [totalbatch - batch, numpts, pcddim], dtype=np.float32)
             pcds = np.vstack([pcds, padzeros])
         results = predictor(pcds)
 
@@ -99,14 +103,15 @@ def eval_retrieval(evalargs):
             mkdir_p(basedir)
             globaldesc.tofile(savename)
 
-
     print('predicted {} poitnclouds \n'.format(pcdnum))
 
     # Evaluation recall:
     if evalargs.eval_recall:
         evaluator = GlobalDesc_eval(result_savedir='./', desc_dir=save_dir,
-                                    database_file=os.path.join(evalargs.data_path, evalargs.ref_gt_file),
-                                    query_file=os.path.join(evalargs.data_path, evalargs.qry_gt_file),
+                                    database_file=os.path.join(
+                                        evalargs.data_path, evalargs.ref_gt_file),
+                                    query_file=os.path.join(
+                                        evalargs.data_path, evalargs.qry_gt_file),
                                     max_num_nn=25)
         evaluator.evaluate()
         print("evaluation finished!\n")
@@ -121,16 +126,20 @@ def eval_retrieval(evalargs):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--gpu', help='comma separated list of GPU(s) to use.', default='0')
-    parser.add_argument('--save_dir', type=str, default='./demo_data/res_global')
+    parser.add_argument(
+        '--gpu', help='comma separated list of GPU(s) to use.', default='0')
+    parser.add_argument('--save_dir', type=str,
+                        default='./demo_data/res_global')
 
     # for evaluation
     parser.add_argument('--ModelPath', type=str, help='Model to load (for evaluation)',
                         default='../../models/global/globalmodel')
     # parser.add_argument('--data_path', type=str, default="../data/oxford_test_global")
     parser.add_argument('--data_path', type=str, default="./demo_data/")
-    parser.add_argument('--ref_gt_file', type=str, default='global_ref_demo.pickle')
-    parser.add_argument('--qry_gt_file', type=str, default='global_query_demo.pickle')
+    parser.add_argument('--ref_gt_file', type=str,
+                        default='global_ref_demo.pickle')
+    parser.add_argument('--qry_gt_file', type=str,
+                        default='global_query_demo.pickle')
 
     parser.add_argument('--eval_recall', action='store_true', default=False)
     parser.add_argument('--delete_tmp', action='store_true', default=False)

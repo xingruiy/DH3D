@@ -1,15 +1,16 @@
 from __future__ import division, print_function
 
-import math
-import numpy as np
-from tabulate import tabulate
-import os
 import json
-from termcolor import colored
-from tensorpack import logger
+import math
+import os
 import pickle
+
+import numpy as np
 import open3d as o3d
 from sklearn.neighbors import NearestNeighbors
+from tabulate import tabulate
+from tensorpack import logger
+from termcolor import colored
 
 
 def single_nms(xyz, attention, nms_radius, min_response_ratio, max_keypoints, remove_noise=True):
@@ -29,7 +30,8 @@ def single_nms(xyz, attention, nms_radius, min_response_ratio, max_keypoints, re
     # Extract the top k features, filtering out weak responses
     attention_thresh = np.max(attention) * min_response_ratio
 
-    is_max_attention = [(attention[m], m) for m in is_max if attention[m] > attention_thresh]
+    is_max_attention = [(attention[m], m)
+                        for m in is_max if attention[m] > attention_thresh]
     is_max_attention = sorted(is_max_attention, reverse=True)
 
     max_indices = [m[1] for m in is_max_attention]
@@ -52,7 +54,8 @@ def get_sets_dict(filename):
 
 def get_knn(positions, k):
     from sklearn.neighbors import NearestNeighbors
-    nbrs = NearestNeighbors(n_neighbors=k, algorithm='ball_tree').fit(positions)
+    nbrs = NearestNeighbors(
+        n_neighbors=k, algorithm='ball_tree').fit(positions)
     distances, indices = nbrs.kneighbors(positions)
     return indices, distances
 
@@ -102,7 +105,8 @@ def get_fixednum_pcd(cloud, targetnum, randsample=True, need_downsample=False, s
     else:
         num_to_pad = targetnum - cloud.shape[0]
         if randsample:
-            pad_points = cloud[np.random.choice(cloud.shape[0], size=num_to_pad, replace=True), :]
+            pad_points = cloud[np.random.choice(
+                cloud.shape[0], size=num_to_pad, replace=True), :]
         else:
             pad_points = np.ones([num_to_pad, 3], dtype=np.float32) * 100000
 
@@ -132,7 +136,8 @@ class FarthestSampler:
         distances = self.calc_distances(first_point, pts)
         for i in range(1, k):
             farthest_pts_ind.append(np.argmax(distances))
-            distances = np.minimum(distances, self.calc_distances(pts[farthest_pts_ind[i]], pts))
+            distances = np.minimum(distances, self.calc_distances(
+                pts[farthest_pts_ind[i]], pts))
         return np.asarray(farthest_pts_ind)
 
 
@@ -154,7 +159,8 @@ def write_to_bin(points, filename):
 
 
 def restore_scale_pcd(pcd, knn=3):
-    nbrs = NearestNeighbors(n_neighbors=knn, algorithm='ball_tree').fit(pcd[:, 0:3])
+    nbrs = NearestNeighbors(
+        n_neighbors=knn, algorithm='ball_tree').fit(pcd[:, 0:3])
     distances, indices = nbrs.kneighbors(pcd[:, :])  # ptnnum1, n_neighbors
     distances_sum = np.mean(distances)
     scale = 0.2 / distances_sum
@@ -256,6 +262,7 @@ def evaluate_R_t(R_gt, t_gt, R, t, q_gt=None):
 
     return err_q, err_t
 
+
 def rigid_transform_3D(A, B, return44=False):
     '''
      v0: n*3
@@ -264,7 +271,7 @@ def rigid_transform_3D(A, B, return44=False):
 
     assert len(A) == len(B)
 
-    N = A.shape[0];  # total points
+    N = A.shape[0]  # total points
 
     centroid_A = np.mean(A, axis=0)
     centroid_B = np.mean(B, axis=0)
@@ -301,6 +308,8 @@ def rigid_transform_3D(A, B, return44=False):
         return R, t
 
 # ***************************************start of transform.py************************************#
+
+
 def quaternion_from_matrix(matrix, isprecise=False):
     """Return quaternion from rotation matrix.
     If isprecise is True, the input matrix is assumed to be a precise rotation
@@ -579,6 +588,3 @@ def crossTimesmatrix(v):
     v_times[:, 2, 0] = - v[:, 1]
     v_times[:, 2, 1] = v[:, 0]
     return v_times
-
-
-

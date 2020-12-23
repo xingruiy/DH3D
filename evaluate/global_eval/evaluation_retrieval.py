@@ -14,16 +14,17 @@
 # limitations under the License.
 
 
-from scipy.spatial import cKDTree
-import numpy as np
+from core.utils import get_sets_dict, load_descriptor_bin
 import os
-from tabulate import tabulate
-from collections import namedtuple
 import sys
+from collections import namedtuple
+
+import numpy as np
+from scipy.spatial import cKDTree
+from tabulate import tabulate
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(os.path.dirname(CURRENT_DIR)))
-from core.utils import load_descriptor_bin, get_sets_dict
 
 
 def is_gt_match_2D(queries, ref, distance_thresh=25):
@@ -81,7 +82,8 @@ class GlobalDesc_eval(object):
             self.query_sequences = sorted(self.query_sets.keys())
 
         print("loading databse position info and descriptors")
-        self.database_pos, self.database_desc = self.get_database_pos_desc(isquery=False)
+        self.database_pos, self.database_desc = self.get_database_pos_desc(
+            isquery=False)
         print(" {} databases loaded".format(len(self.database_pos)))
 
         print("loading query position info and descriptors")
@@ -89,7 +91,8 @@ class GlobalDesc_eval(object):
         print("{} queries loaded".format(len(self.query_pos)))
 
         print(tabulate(
-            [[self.database_sequences[i], len(self.database_desc[i])] for i in range(len(self.database_sequences))],
+            [[self.database_sequences[i], len(self.database_desc[i])] for i in range(
+                len(self.database_sequences))],
             headers=["databaseseq", "segnum"]))
         print()
         print(tabulate([[self.query_sequences[i], len(self.query_desc[i])] for i in range(len(self.query_sequences))],
@@ -117,7 +120,8 @@ class GlobalDesc_eval(object):
                 pos['northing'].append(pcd['northing'])
                 pos['easting'].append(pcd['easting'])
                 pcd_filepath = pcd['query']
-                desc = load_descriptor_bin(os.path.join(descdir, pcd_filepath + ext), self.desc_dim)
+                desc = load_descriptor_bin(os.path.join(
+                    descdir, pcd_filepath + ext), self.desc_dim)
                 descriptors.append(desc)
             pos_sets.append(pos)
             descriptors = np.vstack(descriptors)
@@ -155,7 +159,8 @@ class GlobalDesc_eval(object):
             headers=["refseq", "queryseq", "recalls0-5", "recalls5-10", "recalls10-15", "1%"]))
 
         recalls = np.vstack([ret.recalls for ret in results])
-        one_percent_retrieved = np.hstack([ret.one_percent_retrieved for ret in results])
+        one_percent_retrieved = np.hstack(
+            [ret.one_percent_retrieved for ret in results])
 
         avg_recall = np.mean(recalls, axis=0)
         avg_one_percent_retrieved = np.mean(one_percent_retrieved)
@@ -167,9 +172,6 @@ class GlobalDesc_eval(object):
         print("\n")
         print("Avg_one_percent_retrieved:")
         print("{:.4f}".format(avg_one_percent_retrieved))
-
-
-
 
 
 if __name__ == '__main__':

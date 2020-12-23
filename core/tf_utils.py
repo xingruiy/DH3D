@@ -14,25 +14,23 @@
 # limitations under the License.
 
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
+from layers import (convolution_pointset, flex_avg, flex_convolution,
+                    flex_pooling, knn_bruteforce)
+from tf_ops.sampling.tf_sampling import farthest_point_sample, gather_point
+from tf_ops.grouping.tf_grouping import group_point
 
+import os
+import sys
+from contextlib import ExitStack, contextmanager
 
 import tensorflow as tf
 from tensorpack import *
 from tensorpack import logger
 from tensorpack.tfutils.varreplace import freeze_variables
-from contextlib import ExitStack, contextmanager
 
-import os
-import sys
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(BASE_DIR)
-
-from tf_ops.grouping.tf_grouping import group_point
-from tf_ops.sampling.tf_sampling import farthest_point_sample, gather_point
-from layers import flex_convolution, flex_pooling, knn_bruteforce, flex_avg, convolution_pointset
 
 
 def get_bn(zero_init=False):
@@ -55,7 +53,8 @@ def flexconv_withBatchnorm(feats, points, nn, dout, name, ac_func=tf.nn.relu):
     :return: [B, dim_out, N]
     '''
     # -> B, dim_out, N
-    x = flex_convolution(feats, points, nn, dout, activation=tf.identity, name=name)
+    x = flex_convolution(feats, points, nn, dout,
+                         activation=tf.identity, name=name)
     # -> B, dim_out, 1, N
     x = tf.expand_dims(x, 2)
     x = ac_func(BatchNorm('{}_bn'.format(name), x, data_format='NCHW'))
@@ -74,7 +73,8 @@ def convolution_pointset_withBatchnorm(points, nn, dout, name, ac_func=tf.nn.rel
     :return: [B, dim_out, N]
     '''
     # -> B, dim_out, N
-    x = convolution_pointset(points, nn, dout, activation=tf.identity, name=name)
+    x = convolution_pointset(
+        points, nn, dout, activation=tf.identity, name=name)
     # -> B, dim_out, 1, N
     x = tf.expand_dims(x, 2)
     x = ac_func(BatchNorm('{}_bn'.format(name), x, data_format='NCHW'))
@@ -102,7 +102,8 @@ def feature_conv1d_1(feat, dim, name, c_last=True, ac_func=BNReLU):
         feat = tf.transpose(feat, perm=[0, 2, 1])
     feat = tf.expand_dims(feat, 2)
     with tf.variable_scope(name):
-        newfeat = Conv2D('tfconv0', feat, dim,  kernel_shape=1, padding='VALID', activation=ac_func)
+        newfeat = Conv2D('tfconv0', feat, dim,  kernel_shape=1,
+                         padding='VALID', activation=ac_func)
         newfeat = tf.squeeze(newfeat, 2)
     if not c_last:
         newfeat = tf.transpose(newfeat, perm=[0, 2, 1])
@@ -149,7 +150,8 @@ def backbone_scope(freeze):
     """
     with ExitStack() as stack:
         if freeze:
-            stack.enter_context(freeze_variables(stop_gradient=False, skip_collection=True))
+            stack.enter_context(freeze_variables(
+                stop_gradient=False, skip_collection=True))
         yield
 
 

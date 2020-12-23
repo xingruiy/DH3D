@@ -14,24 +14,24 @@
 # limitations under the License.
 
 
+from core.utils import mkdir_p, single_nms
+from core.model import DH3D
+from core.datasets import Local_test_dataset
+from core.configs import dotdict
 import argparse
-import sys
-import numpy as np
-import os
 import json
+import os
+import sys
 
-from tensorpack.predict import PredictConfig, OfflinePredictor
-from tensorpack.tfutils import get_model_loader
+import numpy as np
 from tensorpack.dataflow import BatchData
+from tensorpack.predict import OfflinePredictor, PredictConfig
+from tensorpack.tfutils import get_model_loader
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
 sys.path.append(os.path.dirname(BASE_DIR))
 # sys.path.append(os.path.dirname(os.path.dirname(BASE_DIR)))
-from core.model import DH3D
-from core.utils import mkdir_p, single_nms
-from core.datasets import Local_test_dataset
-from core.configs import dotdict
 
 
 def get_eval_oxford_data(cfg={}):
@@ -86,7 +86,8 @@ def pred_saveres(eval_config, res, filename, kp_savenum=-1):
     ext_name = 'res.bin'
     if eval_config.save_all:
         save_res = np.float32(res)
-        savename = os.path.join(eval_config.save_dir, '{}_{}'.format(filename, ext_name))
+        savename = os.path.join(eval_config.save_dir,
+                                '{}_{}'.format(filename, ext_name))
         res.tofile(savename)
 
     elif eval_config.perform_nms:
@@ -115,10 +116,12 @@ def perform_pred(df, totalbatch, predictor, eval_config):
         batch = pc.shape[0]
         if totalbatch > batch:
             numpts, pcddim = pc.shape[1], pc.shape[2]
-            padzeros = np.zeros([totalbatch - batch, numpts, pcddim], dtype=np.float32)
+            padzeros = np.zeros(
+                [totalbatch - batch, numpts, pcddim], dtype=np.float32)
             pc = np.vstack([pc, padzeros])
             if knn_ind is not None:
-                padzeros = np.zeros([totalbatch - batch, numpts, knn_ind.shape[2]], dtype=np.int32)
+                padzeros = np.zeros(
+                    [totalbatch - batch, numpts, knn_ind.shape[2]], dtype=np.int32)
                 knn_ind = np.vstack([knn_ind, padzeros])
 
         if knn_ind is not None:
@@ -158,14 +161,18 @@ def pred_local_oxford(eval_args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--gpu', help='comma separated list of GPU(s) to use.', default='0')
-    parser.add_argument('--save_dir', type=str, default='./demo_data/res_local')
+    parser.add_argument(
+        '--gpu', help='comma separated list of GPU(s) to use.', default='0')
+    parser.add_argument('--save_dir', type=str,
+                        default='./demo_data/res_local')
     parser.add_argument('--ModelPath', type=str, help='Model to load (for evaluation)',
                         default='../../models/local/localmodel')
-    parser.add_argument('--dataset', type=str, help='oxford_lidar or oxford_dso', default='oxford_lidar')
+    parser.add_argument('--dataset', type=str,
+                        help='oxford_lidar or oxford_dso', default='oxford_lidar')
     parser.add_argument('--save_all', action='store_true',
                         help='save dense feature map, which can be helpful when evaluating with other 3D detectors', default=False)
-    parser.add_argument('--perform_nms', action='store_true', help='perform nms and save detected descriptors', default=False)
+    parser.add_argument('--perform_nms', action='store_true',
+                        help='perform nms and save detected descriptors', default=False)
     parser.add_argument('--nms_rad', type=float, default=0.5)
     parser.add_argument('--nms_min_ratio', type=float, default=0.01)
     parser.add_argument('--nms_max_kp', type=int, default=512)

@@ -14,17 +14,18 @@
 # limitations under the License.
 
 
-from tf_utils import backbone_scope
-from layers import knn_bruteforce
-import losses
-import backbones
-from tf_ops.grouping.tf_grouping import group_point
 import os
 import sys
 
 import tensorflow as tf
 from tensorpack import *
 from tensorpack.tfutils.summary import add_moving_summary
+from tf_ops.grouping.tf_grouping import group_point
+
+import backbones
+import losses
+from layers import knn_bruteforce
+from tf_utils import backbone_scope
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(BASE_DIR)

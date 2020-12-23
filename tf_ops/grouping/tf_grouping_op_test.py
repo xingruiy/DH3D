@@ -1,7 +1,8 @@
-import tensorflow as tf
 import numpy as np
-from tf_grouping import query_ball_point, query_ball_point2, group_point
+import tensorflow as tf
 from scipy.spatial.distance import cdist
+
+from tf_grouping import group_point, query_ball_point, query_ball_point2
 
 
 class GroupPointTest(tf.test.TestCase):
@@ -10,7 +11,8 @@ class GroupPointTest(tf.test.TestCase):
 
     def test_grad(self):
         with tf.device('/gpu:0'):
-            points = tf.constant(np.random.random((1, 128, 16)).astype('float32'))
+            points = tf.constant(np.random.random(
+                (1, 128, 16)).astype('float32'))
             print(points)
             xyz1 = tf.constant(np.random.random((1, 128, 3)).astype('float32'))
             xyz2 = tf.constant(np.random.random((1, 8, 3)).astype('float32'))
@@ -23,7 +25,8 @@ class GroupPointTest(tf.test.TestCase):
             # with self.test_session():
             with tf.Session() as sess:
                 print("---- Going to compute gradient error")
-                err = tf.test.compute_gradient_error(points, (1, 128, 16), grouped_points, (1, 8, 32, 16))
+                err = tf.test.compute_gradient_error(
+                    points, (1, 128, 16), grouped_points, (1, 8, 32, 16))
                 print(err)
                 self.assertLess(err, 1e-4)
 
@@ -35,7 +38,8 @@ class QueryBallPoint2Test(tf.test.TestCase):
         nbatch = 1
         xyz1 = np.random.random((nbatch, 128, 3)).astype('float32')
         xyz2 = np.random.random((nbatch, 8, 3)).astype('float32')
-        radii = np.random.uniform(low=0.2, high=0.4, size=(nbatch, 8)).astype('float32')
+        radii = np.random.uniform(
+            low=0.2, high=0.4, size=(nbatch, 8)).astype('float32')
 
         print('---- Verifying QueryBallPoint2')
         with tf.device('/gpu:0'):
@@ -44,7 +48,8 @@ class QueryBallPoint2Test(tf.test.TestCase):
             radii_tensor = tf.constant(radii)
             nsample = 32
 
-            idx_op, pts_cnt_op = query_ball_point2(radii_tensor, nsample, xyz1_tensor, xyz2_tensor)
+            idx_op, pts_cnt_op = query_ball_point2(
+                radii_tensor, nsample, xyz1_tensor, xyz2_tensor)
 
             with tf.Session() as sess:
                 idx, pts_cnt = sess.run([idx_op, pts_cnt_op])
@@ -61,7 +66,8 @@ class QueryBallPoint2Test(tf.test.TestCase):
                 assert (np.all(pts_cnt[i, :] == pts_cnt_gt))
 
                 for j in range(xyz2.shape[1]):  # For each cluster
-                    assert (set(idx[i, j, :]) == set(np.nonzero(within_ball[:, j])[0]))
+                    assert (set(idx[i, j, :]) == set(
+                        np.nonzero(within_ball[:, j])[0]))
 
         pass
 
