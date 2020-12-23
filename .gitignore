@@ -147,3 +147,4 @@ logs
 *.cu.o
 res_local/
 res_global/
+.vscode
