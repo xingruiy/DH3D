@@ -19,26 +19,30 @@ limitations under the License.
 
 #include "tensorflow/core/framework/op_kernel.h"
 
-namespace tensorflow {
-class OpKernelContext;
-class Tensor;
+namespace tensorflow
+{
+  class OpKernelContext;
+  class Tensor;
 
-using CPUDevice = Eigen::ThreadPoolDevice;
-using GPUDevice = Eigen::GpuDevice;
-}  // namespace tensorflow
+  using CPUDevice = Eigen::ThreadPoolDevice;
+  using GPUDevice = Eigen::GpuDevice;
+} // namespace tensorflow
 
-namespace tensorflow {
-namespace functor {
+namespace tensorflow
+{
+  namespace functor
+  {
 
-template <typename Device, typename Dtype, typename NBtype>
-struct KnnBruteforceFunctor {
-  void operator()(::tensorflow::OpKernelContext *ctx, const Tensor &positions,
-                  Tensor *neighborhood_out, Tensor *distances);
+    template <typename Device, typename Dtype, typename NBtype>
+    struct KnnBruteforceFunctor
+    {
+      void operator()(::tensorflow::OpKernelContext *ctx, const Tensor &positions,
+                      Tensor *neighborhood_out, Tensor *distances);
 
-  bool return_timings;
-};
+      bool return_timings;
+    };
 
-}  // namespace functor
-}  // namespace tensorflow
+  } // namespace functor
+} // namespace tensorflow
 
-#endif  // LIB_KNN_BF_OP_H_
+#endif // LIB_KNN_BF_OP_H_

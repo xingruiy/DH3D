@@ -18,24 +18,22 @@
 # Modifications copyright (C) 2013 <Technical University of Munich/Juan Du>
 
 
-import tensorflow as tf
-
 import os
 import sys
+
+import tensorflow as tf
+from tensorflow.python.framework import ops, tensor_shape
+from tensorflow.python.keras import activations, initializers
+from tensorflow.python.layers.base import Layer
+from user_ops import convolution_pointset as _convolution_pointset
+from user_ops import flex_convolution as _flex_convolution
+from user_ops import flex_convolution_transpose as _flex_convolution_transpose
+from user_ops import flex_pooling as _flex_pooling
+from user_ops import knn_bruteforce as _knn_bruteforce
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
 
-from user_ops import flex_convolution as _flex_convolution
-from user_ops import flex_pooling as _flex_pooling
-from user_ops import knn_bruteforce as _knn_bruteforce
-from user_ops import flex_convolution_transpose as _flex_convolution_transpose
-from user_ops import convolution_pointset as _convolution_pointset
-
-from tensorflow.python.keras import activations
-from tensorflow.python.keras import initializers
-from tensorflow.python.layers.base import Layer
-from tensorflow.python.framework import tensor_shape
-from tensorflow.python.framework import ops
 
 all = ['FlexPooling', 'FlexConvolution', 'FlexConvolutionTranspose', 'ConvolutionPointset'
        'flex_pooling', 'flex_convolution', 'flex_convolution_transpose', 'convolution_pointset',
@@ -240,8 +238,10 @@ class FlexConvolution(Layer):
         self.use_feature_bias = use_feature_bias
         self.data_format = data_format
         self.kernel_initializer = initializers.get(kernel_initializer)
-        self.position_bias_initializer = initializers.get(position_bias_initializer)
-        self.features_bias_initializer = initializers.get(features_bias_initializer)
+        self.position_bias_initializer = initializers.get(
+            position_bias_initializer)
+        self.features_bias_initializer = initializers.get(
+            features_bias_initializer)
 
     def compute_output_shape(self, input_shapes):
         assert isinstance(input_shapes, list)
@@ -587,8 +587,10 @@ class ConvolutionPointset(Layer):
         self.use_feature_bias = use_feature_bias
         self.data_format = data_format
         self.kernel_initializer = initializers.get(kernel_initializer)
-        self.position_bias_initializer = initializers.get(position_bias_initializer)
-        self.features_bias_initializer = initializers.get(features_bias_initializer)
+        self.position_bias_initializer = initializers.get(
+            position_bias_initializer)
+        self.features_bias_initializer = initializers.get(
+            features_bias_initializer)
 
     def compute_output_shape(self, input_shapes):
         assert isinstance(input_shapes, list)

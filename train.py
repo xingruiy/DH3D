@@ -16,7 +16,6 @@
 
 import argparse
 from tensorpack import *
-
 from core.datasets import *
 from core.model import DH3D
 from core.configs import ConfigFactory
@@ -33,7 +32,8 @@ def get_data(cfg={}):
 def get_config(model, config):
 
     callbacks = [
-        PeriodicTrigger(ModelSaver(max_to_keep=100), every_k_steps=config.savemodel_every_k_steps),
+        PeriodicTrigger(ModelSaver(max_to_keep=100),
+                        every_k_steps=config.savemodel_every_k_steps),
         ModelSaver(),
     ]
 
@@ -50,17 +50,20 @@ def get_config(model, config):
         max_epoch=50,
     )
     if config.loadpath is not None:
-        train_configs.session_init = SmartInit(configs.loadpath, ignore_mismatch=True)
+        train_configs.session_init = SmartInit(
+            configs.loadpath, ignore_mismatch=True)
 
     return train_configs
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--gpu', help='comma separated list of GPU(s) to use.', default='0')
+    parser.add_argument(
+        '--gpu', help='comma separated list of GPU(s) to use.', default='0')
     parser.add_argument('--logdir', help='log directory', default='logs')
-    parser.add_argument('--logact', type=str, help='action to log directory', default='k')
-    parser.add_argument('--cfg', type=str,default='basic_config' )
+    parser.add_argument('--logact', type=str,
+                        help='action to log directory', default='k')
+    parser.add_argument('--cfg', type=str, default='basic_config')
 
     args = parser.parse_args()
 

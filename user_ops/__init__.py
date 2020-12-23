@@ -17,14 +17,14 @@
 """Tensorflow op performing flex convolution operation."""
 
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
+
+import os
 
 import tensorflow as tf
-import os
 from tensorflow.python.framework import ops
-from tensorflow.contrib.util import loader
+
+# from tensorflow.contrib.util import loader
 
 __all__ = []
 
@@ -33,7 +33,7 @@ def load_op(name, has_grad=False, public=False):
     global __all__
     path = os.path.join(os.path.dirname(__file__), '%s_op.so' % name)
     if os.path.isfile(path):
-        _module = loader.load_op_library(path)
+        _module = tf.load_op_library(path)
         if has_grad:
             if public:
                 __all__.append('%s' % name)
@@ -199,7 +199,6 @@ def _FlexDeconvGrad(op, *grads):  # noqa
     db = ops.convert_to_tensor(db, name='gradient_bias')
 
     return [df, dt, db, None, None]
-
 
 
 def convolution_pointset(features,

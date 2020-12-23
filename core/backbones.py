@@ -14,28 +14,34 @@
 # limitations under the License.
 
 
-import os
 import math
-import tensorflow as tf
-from tensorpack import *
-import tensorflow.contrib.slim as slim
-
+import os
 import sys
+
+import tensorflow as tf
+import tf_slim as slim
+from tensorpack import *
+from tf_ops.interpolation.tf_interpolate import three_interpolate, three_nn
+
+from layers import (convolution_pointset, flex_avg, flex_convolution,
+                    flex_pooling, knn_bruteforce)
+from tf_utils import *
+
+# import tensorflow.contrib.slim as slim
+
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
-
-from layers import flex_convolution, flex_pooling, knn_bruteforce, flex_avg, convolution_pointset
-from tf_ops.interpolation.tf_interpolate import three_nn, three_interpolate
-from tf_utils import *
 
 
 def se_bottleneck(l, pool_l, ch_out, name):
     with tf.variable_scope(name):
         pool_l_T = tf.transpose(pool_l, perm=[0, 2, 1])
         # squeeze
-        squeeze = feature_conv1d_1(pool_l_T, ch_out // 4, 'f1', ac_func=tf.nn.relu, c_last=True)
-        squeeze = feature_conv1d_1(squeeze, ch_out, 'f2', ac_func=tf.nn.sigmoid, c_last=True)
+        squeeze = feature_conv1d_1(
+            pool_l_T, ch_out // 4, 'f1', ac_func=tf.nn.relu, c_last=True)
+        squeeze = feature_conv1d_1(
+            squeeze, ch_out, 'f2', ac_func=tf.nn.sigmoid, c_last=True)
 
         # excite
         l = l * tf.transpose(squeeze, perm=[0, 2, 1])
@@ -47,8 +53,10 @@ def se_res_bottleneck(l, pool_l, ch_out, name):
     with tf.variable_scope(name):
         pool_l_T = tf.transpose(pool_l, perm=[0, 2, 1])
         # squeeze
-        squeeze = feature_conv1d_1(pool_l_T, ch_out // 4, 'f1', ac_func=tf.nn.relu, c_last=True)
-        squeeze = feature_conv1d_1(squeeze, ch_out, 'f2', ac_func=tf.nn.sigmoid, c_last=True)
+        squeeze = feature_conv1d_1(
+            pool_l_T, ch_out // 4, 'f1', ac_func=tf.nn.relu, c_last=True)
+        squeeze = feature_conv1d_1(
+            squeeze, ch_out, 'f2', ac_func=tf.nn.sigmoid, c_last=True)
 
         # excite
         l = l * tf.transpose(squeeze, perm=[0, 2, 1])
@@ -61,7 +69,8 @@ def flex_conv_dilate(xyz, feat, dilate, knn, outdims, scope, knn_indices=None, c
     npoint = num_point // dilate
     with tf.variable_scope(scope) as sc:
         if dilate > 1:
-            points_sampled, feat_sampled, kp_indices = subsample(xyz, feat, npoint, kp_idx=None)
+            points_sampled, feat_sampled, kp_indices = subsample(
+                xyz, feat, npoint, kp_idx=None)
         else:
             points_sampled, feat_sampled = xyz, feat
 
@@ -72,15 +81,19 @@ def flex_conv_dilate(xyz, feat, dilate, knn, outdims, scope, knn_indices=None, c
 
         x = feats_T
         for i, d in enumerate(outdims):
-            x = flexconv_withBatchnorm(x, points_T, knn_indices, d, name='flexconv_{}'.format(i))
+            x = flexconv_withBatchnorm(
+                x, points_T, knn_indices, d, name='flexconv_{}'.format(i))
 
         if add_se == 'max_pool':
             x_pool = flex_pooling(x, knn_indices, name='se_maxpool')
-            newx = se_res_bottleneck(x, x_pool, outdims[-1], "se")  # l: B, 64, N
+            newx = se_res_bottleneck(
+                x, x_pool, outdims[-1], "se")  # l: B, 64, N
         elif add_se == 'avg_pool':
-            x_pool = flex_avg(x, points_T, knn_indices, outdims[-1], name='se_avgpool')
+            x_pool = flex_avg(x, points_T, knn_indices,
+                              outdims[-1], name='se_avgpool')
             x_pool = x_pool * (1.0 / knn)
-            newx = se_res_bottleneck(x, x_pool, outdims[-1], "se")  # l: B, 64, N
+            newx = se_res_bottleneck(
+                x, x_pool, outdims[-1], "se")  # l: B, 64, N
         else:
             newx = x
 
@@ -97,7 +110,8 @@ def flex_conv_dilate(xyz, feat, dilate, knn, outdims, scope, knn_indices=None, c
 
         if concat:
             new_feat = tf.concat(axis=2, values=[new_feat, feat])
-            new_feat = feature_conv1d_1(new_feat, outdims[-1], name='concat_conv1d', c_last=True, ac_func=BNReLU)
+            new_feat = feature_conv1d_1(
+                new_feat, outdims[-1], name='concat_conv1d', c_last=True, ac_func=BNReLU)
         return xyz, new_feat
 
 
@@ -105,7 +119,8 @@ def backbone_local_dilate(points, featdim, knn_ind, dilate2=8, **unused):
     nn_8 = knn_ind[:, 0:8, :]
 
     # conv1d
-    init_features = convolution_pointset_withBatchnorm(tf.transpose(points, perm=[0, 2, 1]), nn_8, 32, name='initconv')
+    init_features = convolution_pointset_withBatchnorm(
+        tf.transpose(points, perm=[0, 2, 1]), nn_8, 32, name='initconv')
     init_features = flex_pooling(init_features, nn_8, name='init_pool')
     init_features = tf.transpose(init_features, perm=[0, 2, 1])
 
@@ -114,31 +129,34 @@ def backbone_local_dilate(points, featdim, knn_ind, dilate2=8, **unused):
                                       knn_indices=nn_8, concat=False, add_se='max_pool')
 
     # stage 2
-    x2 = feature_conv1d_1(x1, 64, name='before_stage2_conv1d', c_last=True, ac_func=BNReLU)
+    x2 = feature_conv1d_1(
+        x1, 64, name='before_stage2_conv1d', c_last=True, ac_func=BNReLU)
     print(x2)
     newpoints2, x2 = flex_conv_dilate(newpoints1, x2, dilate=dilate2, knn=8, outdims=[128, 128], scope='stage2',
                                       knn_indices=None, concat=True,
                                       add_se='max_pool')
     # combine
-    feat = feature_conv1d_1(x1, 128, 'local_stage1_shortcut', c_last=True, ac_func=BNReLU) + x2
+    feat = feature_conv1d_1(x1, 128, 'local_stage1_shortcut',
+                            c_last=True, ac_func=BNReLU) + x2
 
     if featdim < 128:
         feat = feature_conv1d_1(feat, featdim, 'final_fc', c_last=True)
     return newpoints2, feat
 
 
-########################################################### detection:
+# detection:
 
 def detection_block(features, scope='detection_block_reliable', freeze_det=False, conv_dims=[128, 256, 1024],
                     ac_func=BNReLU, use_softplus=False, **unused):
     features = tf.expand_dims(features, 2)
 
     with backbone_scope(freeze=freeze_det), \
-         tf.variable_scope(scope), \
-         argscope(Conv2D, kernel_shape=1, padding='VALID'):
+            tf.variable_scope(scope), \
+            argscope(Conv2D, kernel_shape=1, padding='VALID'):
 
         for i, d in enumerate(conv_dims):
-            features = Conv2D('detec_conv{}'.format(i), features, d, activation=ac_func)
+            features = Conv2D('detec_conv{}'.format(
+                i), features, d, activation=ac_func)
 
         logits = Conv2D('detec_conv_fc', features, 1, activation=tf.identity,
                         bias_initializer=tf.constant_initializer(1.0 / 8))
@@ -151,7 +169,7 @@ def detection_block(features, scope='detection_block_reliable', freeze_det=False
     return detect_att
 
 
-########################################################### detection:
+# detection:
 
 def globalatt_block(features, scope, ac_func):
     featdim = features.get_shape()[2]
@@ -162,10 +180,11 @@ def globalatt_block(features, scope, ac_func):
         conv_dims = [1024]
 
     with tf.variable_scope(scope), \
-         argscope(Conv2D, kernel_shape=1, padding='VALID'):
+            argscope(Conv2D, kernel_shape=1, padding='VALID'):
 
         for i, d in enumerate(conv_dims):
-            features = Conv2D('detec_conv{}'.format(i), features, d, activation=ac_func)
+            features = Conv2D('detec_conv{}'.format(
+                i), features, d, activation=ac_func)
 
         logits = Conv2D('detec_conv_fc', features, 1, activation=tf.identity)
         logits = tf.squeeze(logits, axis=2)
@@ -173,7 +192,7 @@ def globalatt_block(features, scope, ac_func):
     return att
 
 
-########################################################### for global:
+# for global:
 
 def global_before_assemble(points, localdesc, knn_ind=None, knn_num=8, gl_dilate=8, gl_dims=[256, 1024],
                            concat_xyz=False, **unused):
@@ -196,7 +215,7 @@ def global_before_assemble_conv1d(points, localdesc, gl_dims=[256], concat_xyz=F
     return points, newfeat
 
 
-########################################################### global:
+# global:
 
 # Adopted from PCAN  (https://github.com/XLechter/PCAN/blob/master/pcan_cls.py)
 def global_netvald_block(xyz, features, att, is_training, cluster_size=64, output_dim=256, add_batch_norm=True,
@@ -204,8 +223,9 @@ def global_netvald_block(xyz, features, att, is_training, cluster_size=64, outpu
     num_point = features.get_shape()[1].value
     feature_size = features.get_shape()[2].value
 
-    ######################## code from loupe.netvlad
-    reshaped_input = tf.reshape(features, [-1, feature_size])  # batch * numpt, feat_in
+    # code from loupe.netvlad
+    reshaped_input = tf.reshape(
+        features, [-1, feature_size])  # batch * numpt, feat_in
     reshaped_input = tf.nn.l2_normalize(reshaped_input, 1)
 
     cluster_weights = tf.get_variable("cluster_weights",
@@ -213,7 +233,8 @@ def global_netvald_block(xyz, features, att, is_training, cluster_size=64, outpu
                                       initializer=tf.random_normal_initializer(
                                           stddev=1 / math.sqrt(feature_size)))  # feat_in x num_cluster
 
-    activation = tf.matmul(reshaped_input, cluster_weights)  # batch * numpt, num_cluster
+    # batch * numpt, num_cluster
+    activation = tf.matmul(reshaped_input, cluster_weights)
     if add_batch_norm:
         activation = slim.batch_norm(
             activation,
@@ -267,7 +288,7 @@ def global_netvald_block(xyz, features, att, is_training, cluster_size=64, outpu
 
     vlad = tf.matmul(vlad, hidden1_weights)
 
-    ##Added a batch norm
+    # Added a batch norm
     vlad = tf.contrib.layers.batch_norm(vlad,
                                         center=True, scale=True,
                                         is_training=is_training,

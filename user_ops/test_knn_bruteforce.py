@@ -18,15 +18,15 @@
 # Authors: Fabian Groh, Patrick Wieschollek, Hendrik P.A. Lensch
 
 
-from misc import FakePointCloud, VerboseTestCase
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
 from scipy.spatial.distance import pdist, squareform
 
 from __init__ import knn_bruteforce
+from misc import FakePointCloud, VerboseTestCase
 
 case = FakePointCloud(B=2, N=32, K=4, Din=2, Dout=6, Dp=3)
-case = FakePointCloud(B=1, N=4, K=2, Din=1, Dout=1, Dp=3)
+# case = FakePointCloud(B=1, N=4, K=2, Din=1, Dout=1, Dp=3)
 
 
 def python_bruteforce(positions, k):
@@ -48,9 +48,9 @@ class KnnBruteforceTest(VerboseTestCase):
         case.init_ops()
         expected_nn, expected_dist = python_bruteforce(case.position, k=4)
 
-        with self.test_session(use_gpu=use_gpu, force_gpu=use_gpu) as sess:
+        with tf.device('/gpu:0') if use_gpu else tf.device('/cpu:0'):
             actual_nn, actual_dist = knn_bruteforce(case.position_op, k=4)
-            actual_nn, actual_dist = sess.run([actual_nn, actual_dist])
+            # actual_nn, actual_dist = sess.run([actual_nn, actual_dist])
 
         self.assertAllClose(expected_dist, actual_dist)
         self.assertAllClose(expected_nn, actual_nn)

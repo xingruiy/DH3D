@@ -18,11 +18,11 @@
 # Authors: Fabian Groh, Patrick Wieschollek, Hendrik P.A. Lensch
 
 
-from misc import FakePointCloud, VerboseTestCase
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
 
 from __init__ import flex_pooling
+from misc import FakePointCloud, VerboseTestCase
 
 case = FakePointCloud(B=2, N=32, K=4, Din=2, Dout=6, Dp=3)
 
@@ -32,12 +32,10 @@ class FlexPoolTest(VerboseTestCase):
         super(FlexPoolTest, self).__init__(methodName)
 
     def _forward(self, use_gpu=False, dtype=np.float32):
-        case.init_ops(dtype=dtype)
-        with self.test_session(use_gpu=use_gpu, force_gpu=use_gpu) as sess:
-            actual_op, winner_op = flex_pooling(
-                case.features_op, case.neighborhood_op)
-            actual = sess.run(actual_op)
-        return actual
+        with tf.device('/gpu:0') if use_gpu else tf.device('/cpu:0'):
+            case.init_ops(dtype=dtype)
+            actual_op, _ = flex_pooling(case.features_op, case.neighborhood_op)
+            return actual_op
 
     def test_forward_same_float32(self):
         cpu = self._forward(use_gpu=False, dtype=np.float32)
@@ -48,6 +46,20 @@ class FlexPoolTest(VerboseTestCase):
         cpu = self._forward(use_gpu=False, dtype=np.float64)
         gpu = self._forward(use_gpu=True, dtype=np.float64)
         self.assertAllClose(cpu, gpu)
+
+    def _backward(self, use_gpu=False, dtype=np.float32):
+        with tf.device('/gpu:0') if use_gpu else tf.device('/cpu:0'):
+            case.init_ops(dtype=dtype)
+            with tf.GradientTape() as tape:
+                tape.watch(case.features_op)
+                actual_op, winner_op = flex_pooling(
+                    case.features_op,
+                    case.neighborhood_op)
+
+                grad = tape.gradient(
+                    actual_op, [case.features_op])[0]
+
+            return grad, winner_op
 
     def test_backward_same_float32(self):
         cpu, winner_cpu = self._backward(use_gpu=False, dtype=np.float32)
@@ -61,41 +73,29 @@ class FlexPoolTest(VerboseTestCase):
         self.assertAllClose(winner_cpu, winner_gpu)
         self.assertAllClose(cpu, gpu)
 
-    def _backward(self, use_gpu=False, dtype=np.float32):
-        case.init_ops(dtype=dtype)
-        with self.test_session(use_gpu=use_gpu, force_gpu=use_gpu) as sess:
-            actual_op, winner_op = flex_pooling(
-                case.features_op,
-                case.neighborhood_op)
-
-            graph_features_grad = tf.gradients(actual_op, [case.features_op])[0]
-
-            dx, winner = sess.run([graph_features_grad, winner_op])
-            return dx, winner
-
     def _simple_backward(self, use_gpu=False):
         # BN
-        x = np.array([[[1], [2], [5], [3]]]).transpose(0, 2, 1)
-        n = np.array([[[0, 1, 2, 3], [1, 2, 3, 0], [2, 3, 0, 1],
-                       [3, 0, 1, 2, ]]]).transpose(0, 2, 1)
+        with tf.device('/gpu:0') if use_gpu else tf.device('/cpu:0'):
+            x = np.array([[[1], [2], [5], [3]]]).transpose(0, 2, 1)
+            n = np.array([[[0, 1, 2, 3], [1, 2, 3, 0], [2, 3, 0, 1],
+                           [3, 0, 1, 2, ]]]).transpose(0, 2, 1)
 
-        x = tf.convert_to_tensor(x.astype(np.float32))
-        n = tf.convert_to_tensor(n.astype(np.int32))
+            x = tf.convert_to_tensor(x.astype(np.float32))
+            n = tf.convert_to_tensor(n.astype(np.int32))
 
-        with self.test_session(use_gpu=use_gpu, force_gpu=use_gpu) as sess:
-            actual_op, winner_op = flex_pooling(x, n)
-            graph_features_grad = tf.gradients(actual_op, [x])[0]
-            return sess.run(graph_features_grad)
+            with tf.GradientTape() as tape:
+                tape.watch(x)
+                actual_op, _ = flex_pooling(x, n)
+                graph_features_grad = tape.gradient(actual_op, [x])[0]
+                return graph_features_grad
 
     def test_backward_simple_cpu(self):
         cpu = self._simple_backward(use_gpu=False)
-        cpu[0, 0, 2] -= 4
-        self.assertEqual(cpu.sum(), 0)
+        self.assertEqual(tf.reduce_sum(cpu), 4)
 
     def test_backward_simple_gpu(self):
         gpu = self._simple_backward(use_gpu=True)
-        gpu[0, 0, 2] -= 4
-        self.assertEqual(gpu.sum(), 0)
+        self.assertEqual(tf.reduce_sum(gpu), 4)
 
 
 if __name__ == '__main__':
