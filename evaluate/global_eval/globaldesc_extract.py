@@ -29,7 +29,7 @@ from tensorpack.dataflow import BatchData
 from tensorpack.predict import OfflinePredictor, PredictConfig
 from tensorpack.tfutils import get_model_loader
 
-from evaluation_retrieval import GlobalDesc_eval
+from .evaluation_retrieval import GlobalDesc_eval
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(os.path.dirname(CURRENT_DIR)))
@@ -133,9 +133,10 @@ if __name__ == '__main__':
 
     # for evaluation
     parser.add_argument('--ModelPath', type=str, help='Model to load (for evaluation)',
-                        default='../../models/global/globalmodel')
+                        default='models/global/globalmodel')
     # parser.add_argument('--data_path', type=str, default="../data/oxford_test_global")
-    parser.add_argument('--data_path', type=str, default="./demo_data/")
+    parser.add_argument('--data_path', type=str,
+                        default="evaluate/global_eval/demo_data/")
     parser.add_argument('--ref_gt_file', type=str,
                         default='global_ref_demo.pickle')
     parser.add_argument('--qry_gt_file', type=str,

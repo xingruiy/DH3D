@@ -38,7 +38,7 @@ def get_bn(zero_init=False):
     Zero init gamma is good for resnet. See https://arxiv.org/abs/1706.02677.
     """
     if zero_init:
-        return lambda x, name=None: BatchNorm('bn', x, gamma_initializer=tf.zeros_initializer())
+        return lambda x, name=None: BatchNorm('bn', x, gamma_initializer=tf.compat.v1.zeros_initializer())
     else:
         return lambda x, name=None: BatchNorm('bn', x)
 
@@ -99,14 +99,14 @@ def subsample(points, feat, targetnum, kp_idx):
 def feature_conv1d_1(feat, dim, name, c_last=True, ac_func=BNReLU):
     # [B,N,K] --> [B,N,K2]
     if not c_last:
-        feat = tf.transpose(feat, perm=[0, 2, 1])
+        feat = tf.transpose(a=feat, perm=[0, 2, 1])
     feat = tf.expand_dims(feat, 2)
-    with tf.variable_scope(name):
+    with tf.compat.v1.variable_scope(name):
         newfeat = Conv2D('tfconv0', feat, dim,  kernel_shape=1,
                          padding='VALID', activation=ac_func)
         newfeat = tf.squeeze(newfeat, 2)
     if not c_last:
-        newfeat = tf.transpose(newfeat, perm=[0, 2, 1])
+        newfeat = tf.transpose(a=newfeat, perm=[0, 2, 1])
     return newfeat
 
 
@@ -133,7 +133,7 @@ def pairwise_dist(A, B):
     '''
     A = tf.expand_dims(A, 2)  # b, n , 1, d
     B = tf.expand_dims(B, 1)  # b, 1, n, d
-    dist = tf.reduce_sum(tf.squared_difference(A, B), 3)
+    dist = tf.reduce_sum(input_tensor=tf.math.squared_difference(A, B), axis=3)
     return dist
 
 

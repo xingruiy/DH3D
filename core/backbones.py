@@ -35,8 +35,8 @@ sys.path.append(BASE_DIR)
 
 
 def se_bottleneck(l, pool_l, ch_out, name):
-    with tf.variable_scope(name):
-        pool_l_T = tf.transpose(pool_l, perm=[0, 2, 1])
+    with tf.compat.v1.variable_scope(name):
+        pool_l_T = tf.transpose(a=pool_l, perm=[0, 2, 1])
         # squeeze
         squeeze = feature_conv1d_1(
             pool_l_T, ch_out // 4, 'f1', ac_func=tf.nn.relu, c_last=True)
@@ -44,14 +44,14 @@ def se_bottleneck(l, pool_l, ch_out, name):
             squeeze, ch_out, 'f2', ac_func=tf.nn.sigmoid, c_last=True)
 
         # excite
-        l = l * tf.transpose(squeeze, perm=[0, 2, 1])
+        l = l * tf.transpose(a=squeeze, perm=[0, 2, 1])
     return l
 
 
 def se_res_bottleneck(l, pool_l, ch_out, name):
     shortcut = l
-    with tf.variable_scope(name):
-        pool_l_T = tf.transpose(pool_l, perm=[0, 2, 1])
+    with tf.compat.v1.variable_scope(name):
+        pool_l_T = tf.transpose(a=pool_l, perm=[0, 2, 1])
         # squeeze
         squeeze = feature_conv1d_1(
             pool_l_T, ch_out // 4, 'f1', ac_func=tf.nn.relu, c_last=True)
@@ -59,7 +59,7 @@ def se_res_bottleneck(l, pool_l, ch_out, name):
             squeeze, ch_out, 'f2', ac_func=tf.nn.sigmoid, c_last=True)
 
         # excite
-        l = l * tf.transpose(squeeze, perm=[0, 2, 1])
+        l = l * tf.transpose(a=squeeze, perm=[0, 2, 1])
     return tf.nn.relu(shortcut + l)
 
 
@@ -67,15 +67,15 @@ def flex_conv_dilate(xyz, feat, dilate, knn, outdims, scope, knn_indices=None, c
                      add_se='max_pool', upsample=True, **unused):
     num_point = xyz.get_shape()[1]
     npoint = num_point // dilate
-    with tf.variable_scope(scope) as sc:
+    with tf.compat.v1.variable_scope(scope) as sc:
         if dilate > 1:
             points_sampled, feat_sampled, kp_indices = subsample(
                 xyz, feat, npoint, kp_idx=None)
         else:
             points_sampled, feat_sampled = xyz, feat
 
-        feats_T = tf.transpose(feat_sampled, perm=[0, 2, 1])
-        points_T = tf.transpose(points_sampled, perm=[0, 2, 1])
+        feats_T = tf.transpose(a=feat_sampled, perm=[0, 2, 1])
+        points_T = tf.transpose(a=points_sampled, perm=[0, 2, 1])
         if knn_indices is None:  # B, knn, numpts
             knn_indices, distances = knn_bruteforce(points_T, k=knn)
 
@@ -97,13 +97,14 @@ def flex_conv_dilate(xyz, feat, dilate, knn, outdims, scope, knn_indices=None, c
         else:
             newx = x
 
-        new_feat = tf.transpose(newx, perm=[0, 2, 1])  # B, N, outdim
+        new_feat = tf.transpose(a=newx, perm=[0, 2, 1])  # B, N, outdim
 
         # upsampling
         if upsample and dilate > 1:
             dist, idx = three_nn(xyz, points_sampled)
             dist = tf.maximum(dist, 1e-10)
-            norm = tf.reduce_sum((1.0 / dist), axis=2, keep_dims=True)
+            norm = tf.reduce_sum(input_tensor=(
+                1.0 / dist), axis=2, keepdims=True)
             norm = tf.tile(norm, [1, 1, 3])
             weight = (1.0 / dist) / norm
             new_feat = three_interpolate(new_feat, idx, weight)
@@ -120,9 +121,9 @@ def backbone_local_dilate(points, featdim, knn_ind, dilate2=8, **unused):
 
     # conv1d
     init_features = convolution_pointset_withBatchnorm(
-        tf.transpose(points, perm=[0, 2, 1]), nn_8, 32, name='initconv')
+        tf.transpose(a=points, perm=[0, 2, 1]), nn_8, 32, name='initconv')
     init_features = flex_pooling(init_features, nn_8, name='init_pool')
-    init_features = tf.transpose(init_features, perm=[0, 2, 1])
+    init_features = tf.transpose(a=init_features, perm=[0, 2, 1])
 
     # stage 1
     newpoints1, x1 = flex_conv_dilate(points, init_features, dilate=1, knn=8, outdims=[64, 64], scope='stage1',
@@ -151,7 +152,7 @@ def detection_block(features, scope='detection_block_reliable', freeze_det=False
     features = tf.expand_dims(features, 2)
 
     with backbone_scope(freeze=freeze_det), \
-            tf.variable_scope(scope), \
+            tf.compat.v1.variable_scope(scope), \
             argscope(Conv2D, kernel_shape=1, padding='VALID'):
 
         for i, d in enumerate(conv_dims):
@@ -159,7 +160,7 @@ def detection_block(features, scope='detection_block_reliable', freeze_det=False
                 i), features, d, activation=ac_func)
 
         logits = Conv2D('detec_conv_fc', features, 1, activation=tf.identity,
-                        bias_initializer=tf.constant_initializer(1.0 / 8))
+                        bias_initializer=tf.compat.v1.constant_initializer(1.0 / 8))
         logits = tf.squeeze(logits, axis=2)
     if use_softplus:
         detect_att = tf.nn.softplus(logits)
@@ -179,7 +180,7 @@ def globalatt_block(features, scope, ac_func):
     else:
         conv_dims = [1024]
 
-    with tf.variable_scope(scope), \
+    with tf.compat.v1.variable_scope(scope), \
             argscope(Conv2D, kernel_shape=1, padding='VALID'):
 
         for i, d in enumerate(conv_dims):
@@ -220,18 +221,18 @@ def global_before_assemble_conv1d(points, localdesc, gl_dims=[256], concat_xyz=F
 # Adopted from PCAN  (https://github.com/XLechter/PCAN/blob/master/pcan_cls.py)
 def global_netvald_block(xyz, features, att, is_training, cluster_size=64, output_dim=256, add_batch_norm=True,
                          gating=True, **unused_kwargs):
-    num_point = features.get_shape()[1].value
-    feature_size = features.get_shape()[2].value
+    num_point = features.get_shape()[1]
+    feature_size = features.get_shape()[2]
 
     # code from loupe.netvlad
     reshaped_input = tf.reshape(
         features, [-1, feature_size])  # batch * numpt, feat_in
     reshaped_input = tf.nn.l2_normalize(reshaped_input, 1)
 
-    cluster_weights = tf.get_variable("cluster_weights",
-                                      [feature_size, cluster_size],
-                                      initializer=tf.random_normal_initializer(
-                                          stddev=1 / math.sqrt(feature_size)))  # feat_in x num_cluster
+    cluster_weights = tf.compat.v1.get_variable("cluster_weights",
+                                                [feature_size, cluster_size],
+                                                initializer=tf.compat.v1.random_normal_initializer(
+                                                    stddev=1 / math.sqrt(feature_size)))  # feat_in x num_cluster
 
     # batch * numpt, num_cluster
     activation = tf.matmul(reshaped_input, cluster_weights)
@@ -243,10 +244,10 @@ def global_netvald_block(xyz, features, att, is_training, cluster_size=64, outpu
             is_training=is_training,
             scope="cluster_bn", fused=False)
     else:
-        cluster_biases = tf.get_variable("cluster_biases",
-                                         [cluster_size],
-                                         initializer=tf.random_normal_initializer(
-                                             stddev=1 / math.sqrt(feature_size)))
+        cluster_biases = tf.compat.v1.get_variable("cluster_biases",
+                                                   [cluster_size],
+                                                   initializer=tf.compat.v1.random_normal_initializer(
+                                                       stddev=1 / math.sqrt(feature_size)))
         activation = activation + cluster_biases
     activation = tf.nn.softmax(activation)
 
@@ -259,21 +260,21 @@ def global_netvald_block(xyz, features, att, is_training, cluster_size=64, outpu
     activation = tf.reshape(activation_crn,
                             [-1, num_point, cluster_size])
 
-    a_sum = tf.reduce_sum(activation, -2, keepdims=True)
+    a_sum = tf.reduce_sum(input_tensor=activation, axis=-2, keepdims=True)
 
-    cluster_weights2 = tf.get_variable("cluster_weights2",
-                                       [1, feature_size, cluster_size],
-                                       initializer=tf.random_normal_initializer(
-                                           stddev=1 / math.sqrt(feature_size)))
+    cluster_weights2 = tf.compat.v1.get_variable("cluster_weights2",
+                                                 [1, feature_size, cluster_size],
+                                                 initializer=tf.compat.v1.random_normal_initializer(
+                                                     stddev=1 / math.sqrt(feature_size)))
 
     a = tf.multiply(a_sum, cluster_weights2)
-    activation = tf.transpose(activation, perm=[0, 2, 1])
+    activation = tf.transpose(a=activation, perm=[0, 2, 1])
 
     reshaped_input = tf.reshape(reshaped_input, [-1,
                                                  num_point, feature_size])
 
     vlad = tf.matmul(activation, reshaped_input)
-    vlad = tf.transpose(vlad, perm=[0, 2, 1])  # batch, feature, cluster,
+    vlad = tf.transpose(a=vlad, perm=[0, 2, 1])  # batch, feature, cluster,
     vlad = tf.subtract(vlad, a)  # batch, feature, cluster
 
     vlad = tf.nn.l2_normalize(vlad, 1)  # each feature is normalzed
@@ -281,18 +282,24 @@ def global_netvald_block(xyz, features, att, is_training, cluster_size=64, outpu
     vlad = tf.reshape(vlad, [-1, cluster_size * feature_size])
     vlad = tf.nn.l2_normalize(vlad, 1)  # whole feature is normalized
 
-    hidden1_weights = tf.get_variable("hidden1_weights",
-                                      [cluster_size * feature_size, output_dim],
-                                      initializer=tf.random_normal_initializer(
-                                          stddev=1 / math.sqrt(cluster_size)))
+    hidden1_weights = tf.compat.v1.get_variable("hidden1_weights",
+                                                [cluster_size * feature_size,
+                                                    output_dim],
+                                                initializer=tf.compat.v1.random_normal_initializer(
+                                                    stddev=1 / math.sqrt(cluster_size)))
 
     vlad = tf.matmul(vlad, hidden1_weights)
 
     # Added a batch norm
-    vlad = tf.contrib.layers.batch_norm(vlad,
-                                        center=True, scale=True,
-                                        is_training=is_training,
-                                        scope='bn')
+    # vlad = tf.contrib.layers.batch_norm(vlad,
+    #                                     center=True, scale=True,
+    #                                     is_training=is_training,
+    #                                     scope='bn')
+    vlad = tf.keras.layers.BatchNormalization(
+        name="bn",
+        scale=True,
+        center=True,
+        trainable=True)(vlad, training=is_training)
 
     if gating:
         vlad = context_gating(vlad, add_batch_norm, is_training)
@@ -314,10 +321,10 @@ def context_gating(input_layer, add_batch_norm=True, is_training=True):
 
     input_dim = input_layer.get_shape().as_list()[1]
 
-    gating_weights = tf.get_variable("gating_weights",
-                                     [input_dim, input_dim],
-                                     initializer=tf.random_normal_initializer(
-                                         stddev=1 / math.sqrt(input_dim)))
+    gating_weights = tf.compat.v1.get_variable("gating_weights",
+                                               [input_dim, input_dim],
+                                               initializer=tf.compat.v1.random_normal_initializer(
+                                                   stddev=1 / math.sqrt(input_dim)))
 
     gates = tf.matmul(input_layer, gating_weights)
 
@@ -329,9 +336,9 @@ def context_gating(input_layer, add_batch_norm=True, is_training=True):
             is_training=is_training,
             scope="gating_bn")
     else:
-        gating_biases = tf.get_variable("gating_biases",
-                                        [input_dim],
-                                        initializer=tf.random_normal_initializer(stddev=1 / math.sqrt(input_dim)))
+        gating_biases = tf.compat.v1.get_variable("gating_biases",
+                                                  [input_dim],
+                                                  initializer=tf.compat.v1.random_normal_initializer(stddev=1 / math.sqrt(input_dim)))
         gates = gates + gating_biases
 
     gates = tf.sigmoid(gates)

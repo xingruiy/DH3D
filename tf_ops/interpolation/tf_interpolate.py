@@ -60,7 +60,7 @@ if __name__ == '__main__':
         dist, idx = three_nn(xyz1, xyz2)
         weight = tf.ones_like(dist)/3.0
         interpolated_points = three_interpolate(points, idx, weight)
-    with tf.Session('') as sess:
+    with tf.compat.v1.Session('') as sess:
         now = time.time()
         for _ in range(100):
             ret = sess.run(interpolated_points)

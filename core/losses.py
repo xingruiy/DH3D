@@ -45,14 +45,14 @@ def desc_local_loss(outs_dict, pos_r=0.5, search_r=20, margin=0.8, extra=False, 
     is_pos = tf.cast(tf.less(xyzdist_sqrt, pos_r), dtype=tf.float32)
 
     feat_dist = tf.sqrt(pairwise_dist(feat0, feat1) + 1e-10)
-    num_pos = tf.count_nonzero(is_pos)
-    num_neg = tf.count_nonzero(is_neg)
+    num_pos = tf.math.count_nonzero(is_pos)
+    num_neg = tf.math.count_nonzero(is_neg)
     num_neg = tf.cast(num_neg, tf.float32, name='num_neg')
     num_pos = tf.cast(num_pos, tf.float32, name='num_pos')
 
-    pos_loss = tf.reduce_sum(is_pos * feat_dist) / (num_pos + 1e-10)
+    pos_loss = tf.reduce_sum(input_tensor=is_pos * feat_dist) / (num_pos + 1e-10)
     neg_loss = tf.reduce_sum(
-        is_neg * tf.nn.relu(margin - feat_dist)) / (num_neg + 1e-10)
+        input_tensor=is_neg * tf.nn.relu(margin - feat_dist)) / (num_neg + 1e-10)
 
     pos_loss = tf.identity(pos_loss, name='pos_loss')
     neg_loss = tf.identity(neg_weight * neg_loss, name='neg_loss')
@@ -75,17 +75,17 @@ def local_detection_loss_nn(outs_dict, ar_th=0.3, det_k=16, ar_nn_k=5, pos_r=0.3
     xyz_s0, xyz_s1 = tf.split(outs_dict['xyz_sampled'], 2, axis=0)
     feat_s0, feat_s1 = tf.split(outs_dict['feat_sampled'], 2, axis=0)
     rot = outs_dict['R']
-    knn1, _ = knn_bruteforce(tf.transpose(xyz1, perm=[0, 2, 1]), k=det_k)
+    knn1, _ = knn_bruteforce(tf.transpose(a=xyz1, perm=[0, 2, 1]), k=det_k)
 
-    batchsize = tf.shape(xyz0)[0]
-    samplenum = tf.shape(xyz_s0)[1]
+    batchsize = tf.shape(input=xyz0)[0]
+    samplenum = tf.shape(input=xyz_s0)[1]
 
     xyz0_warp = tf.matmul(xyz_s0, rot)
 
     batch_indices = tf.tile(tf.reshape(
         tf.range(batchsize), (-1, 1, 1)), (1, samplenum, 1))  # N M 1
     indices = tf.concat([batch_indices, sample_ind1], axis=-1)  # Batch, M, 2
-    knn1 = tf.transpose(knn1, [0, 2, 1])
+    knn1 = tf.transpose(a=knn1, perm=[0, 2, 1])
     # batch, numpts, k ===> batch, M, k
     knn_sampled1 = tf.gather_nd(knn1, indices)
 
@@ -98,7 +98,7 @@ def local_detection_loss_nn(outs_dict, ar_th=0.3, det_k=16, ar_nn_k=5, pos_r=0.3
         feat_dist_all = tf.sqrt(pairwise_dist(feat_s0, feat_s1) + 1e-10)
         neg_dist = feat_dist_all + (1 - is_neg) * 100
         hardest_neg_ind1 = tf.cast(
-            tf.argmin(neg_dist, axis=2), tf.int32)  # batch, M
+            tf.argmin(input=neg_dist, axis=2), tf.int32)  # batch, M
         hardest_neg_ind1 = tf.expand_dims(hardest_neg_ind1, 2)
 
         hardest_neg_indices = tf.concat(
@@ -117,11 +117,11 @@ def local_detection_loss_nn(outs_dict, ar_th=0.3, det_k=16, ar_nn_k=5, pos_r=0.3
     sampled_feat1 = tf.gather_nd(feat1, feat1_indices)
 
     matching_xyz_dist = tf.sqrt(
-        tf.reduce_sum(tf.squared_difference(tf.expand_dims(xyz0_warp, 2), sampled_xyz1), -1))
+        tf.reduce_sum(input_tensor=tf.math.squared_difference(tf.expand_dims(xyz0_warp, 2), sampled_xyz1), axis=-1))
 
     # match features
-    matching_feat_dist = tf.reduce_sum(tf.squared_difference(tf.expand_dims(feat_s0, 2), sampled_feat1),
-                                       -1)
+    matching_feat_dist = tf.reduce_sum(input_tensor=tf.math.squared_difference(tf.expand_dims(feat_s0, 2), sampled_feat1),
+                                       axis=-1)
     dists, indices_k_feat = tf.nn.top_k(-matching_feat_dist, k=5)
     batch_indices = tf.tile(tf.reshape(tf.range(batchsize), (-1, 1, 1, 1)),
                             (1, samplenum, ar_nn_k, 1))
@@ -138,32 +138,32 @@ def local_detection_loss_nn(outs_dict, ar_th=0.3, det_k=16, ar_nn_k=5, pos_r=0.3
     padones = tf.ones(
         [is_good.get_shape()[0], is_good.get_shape()[1], 1], tf.float32)
     is_good = tf.concat([is_good, padones], -1)
-    first = tf.cast(tf.argmax(is_good, axis=-1), tf.float32)
+    first = tf.cast(tf.argmax(input=is_good, axis=-1), tf.float32)
 
     # ar is between 0 and 1, 0 is the best
     AR = tf.cast((first + 1e-8) / ar_nn_k, tf.float32)
     score0 = tf.squeeze(score0, axis=2)
     matchingloss = 1 - (AR * score0 + ar_th * (1 - score0))
-    det_loss = tf.reduce_mean(matchingloss, name='det_loss')
+    det_loss = tf.reduce_mean(input_tensor=matchingloss, name='det_loss')
     add_moving_summary(det_loss)
     return det_loss
 
 
 # adopted from PoinNetVLAD (https://github.com/mikacuy/pointnetvlad/blob/master/pointnetvlad_cls.py)
 def best_pos_distance(query, pos_vecs):
-    with tf.name_scope('best_pos_distance') as scope:
+    with tf.compat.v1.name_scope('best_pos_distance') as scope:
         # batch = query.get_shape()[0]
         num_pos = pos_vecs.get_shape()[1]
         # shape num_pos x output_dim
         query_copies = tf.tile(query, [1, int(num_pos), 1])
-        best_pos = tf.reduce_min(tf.reduce_sum(
-            tf.squared_difference(pos_vecs, query_copies), 2), 1)
+        best_pos = tf.reduce_min(input_tensor=tf.reduce_sum(
+            input_tensor=tf.math.squared_difference(pos_vecs, query_copies), axis=2), axis=1)
         # best_pos=tf.reduce_max(tf.reduce_sum(tf.squared_difference(pos_vecs,query_copies),2),1)
         return best_pos
 
 
 def lazy_triplet_loss_impl(q_vec, pos_vecs, neg_vecs, margin, scope="lazy_triplet_loss", **kwargs):
-    with tf.name_scope(scope):
+    with tf.compat.v1.name_scope(scope):
         print("margin!!!!!!!!!!!!!!!!!!!!!111", margin)
         best_pos = best_pos_distance(q_vec, pos_vecs)
         num_neg = neg_vecs.get_shape()[1]
@@ -171,10 +171,10 @@ def lazy_triplet_loss_impl(q_vec, pos_vecs, neg_vecs, margin, scope="lazy_triple
         query_copies = tf.tile(q_vec, [1, int(num_neg), 1])
         best_pos = tf.tile(tf.reshape(best_pos, (-1, 1)), [1, int(num_neg)])
         m = tf.fill([int(batch), int(num_neg)], margin)
-        triplet_loss = tf.reduce_mean(tf.reduce_max(tf.maximum(tf.add(m, tf.subtract(best_pos, tf.reduce_sum(
-            tf.squared_difference(neg_vecs, query_copies),
-            2))),
-            tf.zeros([int(batch), int(num_neg)])), 1))
+        triplet_loss = tf.reduce_mean(input_tensor=tf.reduce_max(input_tensor=tf.maximum(tf.add(m, tf.subtract(best_pos, tf.reduce_sum(
+            input_tensor=tf.math.squared_difference(neg_vecs, query_copies),
+            axis=2))),
+            tf.zeros([int(batch), int(num_neg)])), axis=1))
         return triplet_loss
 
 
@@ -211,10 +211,10 @@ def lazy_quadruplet_loss(global_descs, batch_size, num_pos, num_neg, global_trip
     best_pos = tf.tile(tf.reshape(best_pos, (-1, 1)), [1, int(num_neg)])
     m2 = tf.fill([int(batch), int(num_neg)], global_quadruplet_margin)
 
-    second_loss = tf.reduce_mean(tf.reduce_max(tf.maximum(
+    second_loss = tf.reduce_mean(input_tensor=tf.reduce_max(input_tensor=tf.maximum(
         tf.add(m2, tf.subtract(best_pos, tf.reduce_sum(
-            tf.squared_difference(neg_vecs, other_neg_copies), 2))),
-        tf.zeros([int(batch), int(num_neg)])), 1))
+            input_tensor=tf.math.squared_difference(neg_vecs, other_neg_copies), axis=2))),
+        tf.zeros([int(batch), int(num_neg)])), axis=1))
 
     total_loss = trip_loss + second_loss
 

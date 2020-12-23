@@ -167,10 +167,10 @@ class DH3D(ModelDesc):
                 knn_ind_set.append(inputs_dict['knn_ind_neg'])
             knn_inds = tf.concat(knn_ind_set, 0, name='knn_inds')
             self.knn_indices = tf.transpose(
-                knn_inds, perm=[0, 2, 1])  # batch, k. numpts
+                a=knn_inds, perm=[0, 2, 1])  # batch, k. numpts
         else:
             self.knn_indices, distances = knn_bruteforce(
-                tf.transpose(points, perm=[0, 2, 1]), k=self.config.knn_num)
+                tf.transpose(a=points, perm=[0, 2, 1]), k=self.config.knn_num)
 
         if self.config.sampled_kpnum > 0:
             sample_nodes_concat = tf.concat(
@@ -192,7 +192,7 @@ class DH3D(ModelDesc):
 
         newpoints, localdesc = self.compute_local(points, freeze_local)
         localdesc_l2normed = tf.nn.l2_normalize(
-            localdesc, dim=2, epsilon=1e-8, name='feat_l2normed')
+            localdesc, axis=2, epsilon=1e-8, name='feat_l2normed')
         outs['feat'] = localdesc
         outs['local_desc'] = localdesc_l2normed
 
@@ -225,7 +225,7 @@ class DH3D(ModelDesc):
         if self.config.extract_global:
             globaldesc = self.compute_global(outs, freeze_global=freeze_global)
             globaldesc_l2normed = tf.nn.l2_normalize(
-                globaldesc, dim=-1, epsilon=1e-8, name='globaldesc')
+                globaldesc, axis=-1, epsilon=1e-8, name='globaldesc')
             outs['global_desc'] = globaldesc_l2normed
 
         # loss
@@ -275,13 +275,13 @@ class DH3D(ModelDesc):
         return total_cost
 
     def optimizer(self):
-        lr = tf.train.exponential_decay(
+        lr = tf.compat.v1.train.exponential_decay(
             learning_rate=self.config.start_lr,
             global_step=get_global_step_var(),
             decay_steps=self.config.decay_step,
             decay_rate=self.config.decay_rate, staircase=True, name='learning_rate')
-        tf.summary.scalar('lr', lr)
-        return tf.train.AdamOptimizer(lr)
+        tf.compat.v1.summary.scalar('lr', lr)
+        return tf.compat.v1.train.AdamOptimizer(lr)
 
 
 if __name__ == '__main__':

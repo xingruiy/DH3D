@@ -14,8 +14,6 @@
 # limitations under the License.
 
 
-from utils import *
-from augment import *
 import glob
 import os
 import random
@@ -26,6 +24,9 @@ from sklearn.neighbors import KDTree
 from tensorpack import DataFlow, RNGDataFlow
 from tensorpack.dataflow import BatchData, PrefetchDataZMQ, TestDataSpeed
 from tensorpack.utils import logger
+
+from core.augment import *
+from core.utils import *
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(BASE_DIR)

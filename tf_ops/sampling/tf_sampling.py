@@ -87,14 +87,14 @@ if __name__ == '__main__':
         trib = inp[:, :, 1, :]
         tric = inp[:, :, 2, :]
         areas = tf.sqrt(tf.reduce_sum(
-            tf.cross(trib-tria, tric-tria)**2, 2)+1e-9)
-        randomnumbers = tf.random_uniform((1, 8192))
+            input_tensor=tf.linalg.cross(trib-tria, tric-tria)**2, axis=2)+1e-9)
+        randomnumbers = tf.random.uniform((1, 8192))
         triids = prob_sample(areas, randomnumbers)
         tria_sample = gather_point(tria, triids)
         trib_sample = gather_point(trib, triids)
         tric_sample = gather_point(tric, triids)
-        us = tf.random_uniform((1, 8192))
-        vs = tf.random_uniform((1, 8192))
+        us = tf.random.uniform((1, 8192))
+        vs = tf.random.uniform((1, 8192))
         uplusv = 1-tf.abs(us+vs-1)
         uminusv = us-vs
         us = (uplusv+uminusv)*0.5
@@ -105,7 +105,7 @@ if __name__ == '__main__':
         reduced_sample = gather_point(
             pt_sample, farthest_point_sample(1024, pt_sample))
         print(reduced_sample)
-    with tf.Session('') as sess:
+    with tf.compat.v1.Session('') as sess:
         ret = sess.run(reduced_sample)
     print(ret.shape, ret.dtype)
     import cPickle as pickle

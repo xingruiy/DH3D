@@ -51,7 +51,7 @@ class FlexConvTest(VerboseTestCase):
         with tf.device('/gpu:0') if use_gpu else tf.device('/cpu:0'):
             case.init_ops(dtype=dtype)
             if numdiff:
-                return tf.test.compute_gradient(
+                return tf.compat.v1.test.compute_gradient(
                     flex_convolution, [case.features_op, case.position_op,
                                        case.neighborhood_op,
                                        case.theta_op, case.bias_op])[0]
@@ -68,7 +68,7 @@ class FlexConvTest(VerboseTestCase):
         with tf.device('/gpu:0') if use_gpu else tf.device('/cpu:0'):
             case.init_ops(dtype=dtype)
             if numdiff:
-                return tf.test.compute_gradient(
+                return tf.compat.v1.test.compute_gradient(
                     flex_convolution, [case.features_op, case.position_op,
                                        case.neighborhood_op,
                                        case.theta_op, case.bias_op])[4]
@@ -86,7 +86,7 @@ class FlexConvTest(VerboseTestCase):
             case.init_ops(dtype=dtype)
 
             if numdiff:
-                return tf.test.compute_gradient(
+                return tf.compat.v1.test.compute_gradient(
                     flex_convolution, [case.features_op, case.position_op,
                                        case.neighborhood_op,
                                        case.theta_op, case.bias_op])[3]

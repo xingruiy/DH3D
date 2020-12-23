@@ -53,7 +53,7 @@ class ConvPointsetTest(VerboseTestCase):
             case.init_ops(dtype=dtype)
 
             if numdiff:
-                return tf.test.compute_gradient(
+                return tf.compat.v1.test.compute_gradient(
                     convolution_pointset, [case.features_op,
                                            case.neighborhood_op,
                                            case.theta_rel_op,
@@ -72,7 +72,7 @@ class ConvPointsetTest(VerboseTestCase):
             case.init_ops(dtype=dtype)
 
             if numdiff:
-                return tf.test.compute_gradient(
+                return tf.compat.v1.test.compute_gradient(
                     convolution_pointset, [case.features_op,
                                            case.neighborhood_op,
                                            case.theta_rel_op,
@@ -91,7 +91,7 @@ class ConvPointsetTest(VerboseTestCase):
             case.init_ops(dtype=dtype)
 
         if numdiff:
-            return tf.test.compute_gradient(
+            return tf.compat.v1.test.compute_gradient(
                 convolution_pointset, [case.features_op,
                                        case.neighborhood_op,
                                        case.theta_rel_op,

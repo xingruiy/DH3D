@@ -87,8 +87,8 @@ class KnnBruteforce(Layer):
             positions = _remove_dim(positions, 2)
 
         NN, distances = _knn_bruteforce(positions, k=self.k)
-        NN = tf.transpose(NN, [0, 2, 1])
-        distances = tf.transpose(distances, [0, 2, 1])
+        NN = tf.transpose(a=NN, perm=[0, 2, 1])
+        distances = tf.transpose(a=distances, perm=[0, 2, 1])
 
         if self.data_format == 'expanded':
             NN = tf.expand_dims(NN, axis=2)
@@ -223,8 +223,8 @@ class FlexConvolution(Layer):
                  filters,
                  activation=None,
                  kernel_initializer=None,
-                 position_bias_initializer=tf.zeros_initializer(),
-                 features_bias_initializer=tf.zeros_initializer(),
+                 position_bias_initializer=tf.compat.v1.zeros_initializer(),
+                 features_bias_initializer=tf.compat.v1.zeros_initializer(),
                  use_feature_bias=True,
                  data_format='simple',
                  trainable=True,
@@ -344,7 +344,7 @@ class Flex_Avg(Layer):
     def __init__(self,
                  filters,
                  activation=None,
-                 kernel_initializer=tf.zeros_initializer(),
+                 kernel_initializer=tf.compat.v1.zeros_initializer(),
                  data_format='simple',
                  trainable=True,
                  name=None):
@@ -442,8 +442,8 @@ def flex_convolution(features,
                      filters,
                      activation=None,
                      kernel_initializer=None,
-                     position_bias_initializer=tf.zeros_initializer(),
-                     features_bias_initializer=tf.zeros_initializer(),
+                     position_bias_initializer=tf.compat.v1.zeros_initializer(),
+                     features_bias_initializer=tf.compat.v1.zeros_initializer(),
                      use_feature_bias=True,
                      data_format='simple',
                      trainable=True,
@@ -466,7 +466,7 @@ def flex_avg(features,
              neighborhoods,
              filters,
              activation=None,
-             kernel_initializer=tf.zeros_initializer(),
+             kernel_initializer=tf.compat.v1.zeros_initializer(),
              data_format='simple',
              trainable=True,
              name=None):
@@ -542,8 +542,8 @@ def flex_convolution_transpose(features,
                                filters,
                                activation=None,
                                kernel_initializer=None,
-                               position_bias_initializer=tf.zeros_initializer(),
-                               features_bias_initializer=tf.zeros_initializer(),
+                               position_bias_initializer=tf.compat.v1.zeros_initializer(),
+                               features_bias_initializer=tf.compat.v1.zeros_initializer(),
                                use_feature_bias=True,
                                data_format='simple',
                                trainable=True,
@@ -572,8 +572,8 @@ class ConvolutionPointset(Layer):
                  filters,
                  activation=None,
                  kernel_initializer=None,
-                 position_bias_initializer=tf.zeros_initializer(),
-                 features_bias_initializer=tf.zeros_initializer(),
+                 position_bias_initializer=tf.compat.v1.zeros_initializer(),
+                 features_bias_initializer=tf.compat.v1.zeros_initializer(),
                  use_feature_bias=True,
                  data_format='simple',
                  trainable=True,
@@ -690,8 +690,8 @@ def convolution_pointset(features,
                          filters,
                          activation=None,
                          kernel_initializer=None,
-                         position_bias_initializer=tf.zeros_initializer(),
-                         features_bias_initializer=tf.zeros_initializer(),
+                         position_bias_initializer=tf.compat.v1.zeros_initializer(),
+                         features_bias_initializer=tf.compat.v1.zeros_initializer(),
                          use_feature_bias=False,
                          data_format='simple',
                          trainable=True,

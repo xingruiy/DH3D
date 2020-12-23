@@ -69,14 +69,14 @@ class FakePointCloud(object):
             self.position, self.K).astype(dtype=np.int32)
 
     def init_ops(self, dtype=np.float32):
-        self.theta_op = tf.convert_to_tensor(self.theta.astype(dtype))
-        self.bias_op = tf.convert_to_tensor(self.bias.astype(dtype))
-        self.theta_rel_op = tf.convert_to_tensor(self.theta_rel.astype(dtype))
-        self.bias_rel_op = tf.convert_to_tensor(self.bias_rel.astype(dtype))
+        self.theta_op = tf.convert_to_tensor(value=self.theta.astype(dtype))
+        self.bias_op = tf.convert_to_tensor(value=self.bias.astype(dtype))
+        self.theta_rel_op = tf.convert_to_tensor(value=self.theta_rel.astype(dtype))
+        self.bias_rel_op = tf.convert_to_tensor(value=self.bias_rel.astype(dtype))
 
-        self.features_op = tf.convert_to_tensor(self.features.astype(dtype))
-        self.position_op = tf.convert_to_tensor(self.position.astype(dtype))
-        self.neighborhood_op = tf.convert_to_tensor(self.neighborhood)
+        self.features_op = tf.convert_to_tensor(value=self.features.astype(dtype))
+        self.position_op = tf.convert_to_tensor(value=self.position.astype(dtype))
+        self.neighborhood_op = tf.convert_to_tensor(value=self.neighborhood)
 
     def expected_feature_shape(self):
         return [self.B, self.Din, self.N]

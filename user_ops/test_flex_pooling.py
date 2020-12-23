@@ -80,8 +80,8 @@ class FlexPoolTest(VerboseTestCase):
             n = np.array([[[0, 1, 2, 3], [1, 2, 3, 0], [2, 3, 0, 1],
                            [3, 0, 1, 2, ]]]).transpose(0, 2, 1)
 
-            x = tf.convert_to_tensor(x.astype(np.float32))
-            n = tf.convert_to_tensor(n.astype(np.int32))
+            x = tf.convert_to_tensor(value=x.astype(np.float32))
+            n = tf.convert_to_tensor(value=n.astype(np.int32))
 
             with tf.GradientTape() as tape:
                 tape.watch(x)
@@ -91,11 +91,11 @@ class FlexPoolTest(VerboseTestCase):
 
     def test_backward_simple_cpu(self):
         cpu = self._simple_backward(use_gpu=False)
-        self.assertEqual(tf.reduce_sum(cpu), 4)
+        self.assertEqual(tf.reduce_sum(input_tensor=cpu), 4)
 
     def test_backward_simple_gpu(self):
         gpu = self._simple_backward(use_gpu=True)
-        self.assertEqual(tf.reduce_sum(gpu), 4)
+        self.assertEqual(tf.reduce_sum(input_tensor=gpu), 4)
 
 
 if __name__ == '__main__':

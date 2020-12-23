@@ -97,7 +97,7 @@ def knn_point(k, xyz1, xyz2):
     print(xyz1, (b, 1, n, c))
     xyz1 = tf.tile(tf.reshape(xyz1, (b, 1, n, c)), [1, m, 1, 1])
     xyz2 = tf.tile(tf.reshape(xyz2, (b, m, 1, c)), [1, 1, n, 1])
-    dist = tf.reduce_sum((xyz1-xyz2)**2, -1)  # batch, m, n
+    dist = tf.reduce_sum(input_tensor=(xyz1-xyz2)**2, axis=-1)  # batch, m, n
     print(dist, k)
     outi, out = select_top_k(k, dist)
     idx = tf.slice(outi, [0, 0, 0], [-1, -1, k])
@@ -130,7 +130,7 @@ if __name__ == '__main__':
             grouped_points = group_point(points, idx)
             #grouped_points_grad = tf.ones_like(grouped_points)
             #points_grad = tf.gradients(grouped_points, points, grouped_points_grad)
-    with tf.Session('') as sess:
+    with tf.compat.v1.Session('') as sess:
         now = time.time()
         for _ in range(100):
             ret = sess.run(grouped_points)

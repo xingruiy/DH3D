@@ -19,7 +19,7 @@ class GroupPointTest(tf.test.TestCase):
             weight = tf.ones_like(dist) / 3.0
             interpolated_points = three_interpolate(points, idx, weight)
             print(interpolated_points)
-            err = tf.test.compute_gradient_error(
+            err = tf.compat.v1.test.compute_gradient_error(
                 points, (1, 8, 16), interpolated_points, (1, 128, 16))
             print(err)
             self.assertLess(err, 1e-4)

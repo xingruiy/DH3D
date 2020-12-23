@@ -23,9 +23,9 @@ class GroupPointTest(tf.test.TestCase):
             print(grouped_points)
 
             # with self.test_session():
-            with tf.Session() as sess:
+            with tf.compat.v1.Session() as sess:
                 print("---- Going to compute gradient error")
-                err = tf.test.compute_gradient_error(
+                err = tf.compat.v1.test.compute_gradient_error(
                     points, (1, 128, 16), grouped_points, (1, 8, 32, 16))
                 print(err)
                 self.assertLess(err, 1e-4)
@@ -51,7 +51,7 @@ class QueryBallPoint2Test(tf.test.TestCase):
             idx_op, pts_cnt_op = query_ball_point2(
                 radii_tensor, nsample, xyz1_tensor, xyz2_tensor)
 
-            with tf.Session() as sess:
+            with tf.compat.v1.Session() as sess:
                 idx, pts_cnt = sess.run([idx_op, pts_cnt_op])
 
             assert (np.max(idx < 128))

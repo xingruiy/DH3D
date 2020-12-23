@@ -48,7 +48,7 @@ class FlexConvTest(VerboseTestCase):
             case.init_ops(dtype=dtype)
 
             if numdiff:
-                return tf.test.compute_gradient(
+                return tf.compat.v1.test.compute_gradient(
                     flex_convolution_transpose, [case.features_op,
                                                  case.position_op,
                                                  case.neighborhood_op,
@@ -68,7 +68,7 @@ class FlexConvTest(VerboseTestCase):
             case.init_ops(dtype=dtype)
 
             if numdiff:
-                return tf.test.compute_gradient(
+                return tf.compat.v1.test.compute_gradient(
                     flex_convolution_transpose, [case.features_op,
                                                  case.position_op,
                                                  case.neighborhood_op,
@@ -88,7 +88,7 @@ class FlexConvTest(VerboseTestCase):
             case.init_ops(dtype=dtype)
 
             if numdiff:
-                return tf.test.compute_gradient(
+                return tf.compat.v1.test.compute_gradient(
                     flex_convolution_transpose, [case.features_op,
                                                  case.position_op,
                                                  case.neighborhood_op,
