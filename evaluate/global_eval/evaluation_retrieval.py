@@ -14,12 +14,12 @@
 # limitations under the License.
 
 
-from core.utils import get_sets_dict, load_descriptor_bin
 import os
 import sys
 from collections import namedtuple
 
 import numpy as np
+from core.utils import get_sets_dict, load_descriptor_bin
 from scipy.spatial import cKDTree
 from tabulate import tabulate
 

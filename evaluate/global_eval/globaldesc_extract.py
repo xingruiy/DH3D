@@ -82,6 +82,7 @@ def eval_retrieval(evalargs):
 
     # Predict:
     pcdnum = 0
+    features = []
     for [pcds, names] in df:  # pcds is a list, batchsize x numpts x 3
         batch = pcds.shape[0]
         if totalbatch > batch:
@@ -93,7 +94,7 @@ def eval_retrieval(evalargs):
         results = predictor(pcds)
 
         global_feats = results[0]
-
+        features += list(global_feats)
         for i in range(batch):
             pcdnum += 1
             globaldesc = global_feats[i]
@@ -102,6 +103,10 @@ def eval_retrieval(evalargs):
             basedir = os.path.dirname(savename)
             mkdir_p(basedir)
             globaldesc.tofile(savename)
+
+    features = np.array(features)
+    print(features.shape)
+    np.savetxt('features.txt', features)
 
     print('predicted {} poitnclouds \n'.format(pcdnum))
 
