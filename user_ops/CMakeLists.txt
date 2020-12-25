@@ -29,7 +29,7 @@ endif()
 # set necessary flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SSE_FLAGS} -march=native -fopenmp -O3 -D_GLIBCXX_USE_CXX11_ABI=${TensorFlow_ABI}")
 set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -fPIC --shared -D_GLIBCXX_USE_CXX11_ABI=${TensorFlow_ABI}" )
-set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -std=c++14 -O3 -Xptxas=-v --expt-relaxed-constexpr -D GOOGLE_CUDA=1 --gpu-architecture=sm_86 -D_GLIBCXX_USE_CXX11_ABI=${TensorFlow_ABI}" )
+set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -std=c++14 -O3 -Xptxas=-v --expt-relaxed-constexpr -D GOOGLE_CUDA=1 --gpu-architecture=sm_75 -D_GLIBCXX_USE_CXX11_ABI=${TensorFlow_ABI}" )
 
 # quick fix for drone-ci
 include_directories(SYSTEM "/usr/local/")

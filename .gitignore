@@ -148,4 +148,4 @@ logs
 res_local/
 res_global/
 .vscode
-*.txt
+features.txt

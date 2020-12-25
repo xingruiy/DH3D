@@ -1,7 +1,14 @@
 DH3D: *Deep Hierarchical 3D Descriptors for Robust Large-Scale 6DOF Relocalization*
 ===
+This is a modified version of DH3D. For details see the original description below.
 
-This is a modified version of DH3D. See the original description below:
+## Install
+
+```bash
+conda create -n dh3d -f requirement.txt
+```
+
+
 
 ========================================== 
 
