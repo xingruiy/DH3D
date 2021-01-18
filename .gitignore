@@ -149,3 +149,6 @@ res_local/
 res_global/
 .vscode
 *.txt
+*.pb
+data/
+scripts/

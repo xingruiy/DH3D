@@ -68,7 +68,7 @@ class ConfigFactory(object):
             'input_R': True,
             'data_aug': ['Jitter'],
             'sampled_kpnum': 512,
-            'data_basedir': '/usr/stud/duj/rbc/fixedgrid_lidarpc',
+            'data_basedir': './data',
 
             # loss
             'add_local_loss': True,

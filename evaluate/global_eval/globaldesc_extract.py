@@ -28,6 +28,7 @@ from core.utils import mkdir_p
 from tensorpack.dataflow import BatchData
 from tensorpack.predict import OfflinePredictor, PredictConfig
 from tensorpack.tfutils import get_model_loader
+from tensorpack.tfutils.export import ModelExporter
 
 from .evaluation_retrieval import GlobalDesc_eval
 
@@ -71,9 +72,13 @@ def eval_retrieval(evalargs):
     pred_config = PredictConfig(
         model=DH3D(model_configs),
         session_init=get_model_loader(evalargs.ModelPath),
-        input_names=['pointclouds'],
-        output_names=['globaldesc'],  # ['globaldesc'], output_weights
+        input_names=['anchor'],
+        # ['globaldesc'], output_weights
+        output_names=['globaldesc'],
     )
+    ModelExporter(pred_config).export_compact('compact_graph.pb')
+    return
+
     predictor = OfflinePredictor(pred_config)
 
     # Data:

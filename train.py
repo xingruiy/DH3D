@@ -15,6 +15,7 @@
 
 
 import argparse
+import tensorflow as tf
 from tensorpack import *
 from core.datasets import *
 from core.model import DH3D
@@ -57,17 +58,24 @@ def get_config(model, config):
 
 
 if __name__ == '__main__':
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--gpu', help='comma separated list of GPU(s) to use.', default='0')
+        '--gpu', help='comma separated list of GPU(s) to use.', type=str, default='0')
     parser.add_argument('--logdir', help='log directory', default='logs')
     parser.add_argument('--logact', type=str,
                         help='action to log directory', default='k')
     parser.add_argument('--cfg', type=str, default='basic_config')
 
     args = parser.parse_args()
-
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
+
+    physical_devices = tf.config.list_physical_devices('GPU')
+    try:
+        tf.config.experimental.set_memory_growth(physical_devices[0], True)
+    except:
+        print('no gpu device found!')
+
     configs = ConfigFactory(args.cfg).getconfig()
     logger.set_logger_dir(args.logdir, action=args.logact)
     log_config_info(configs)
