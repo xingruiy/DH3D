@@ -97,7 +97,8 @@ class RotateY(Augmentation):
         rotation_matrix = np.array([[cosval, 0, sinval],
                                     [0, 1, 0],
                                     [-sinval, 0, cosval]])
-        rotated_data = np.dot(data, rotation_matrix)
+        rotated_data = data
+        rotated_data[:, 0:3] = np.dot(data[:, 0:3], rotation_matrix)
 
         return rotated_data
 

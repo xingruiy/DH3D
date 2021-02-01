@@ -87,7 +87,7 @@ def subsample(points, feat, targetnum, kp_idx):
     if kp_idx is not None:
         kp_indices = kp_idx
     else:
-        kp_indices = farthest_point_sample(targetnum, points)
+        kp_indices = farthest_point_sample(targetnum, points[:, :, 0:3])
         kp_indices = tf.expand_dims(kp_indices, 2)
     feat_sampled = group_point(feat, kp_indices)
     feat_sampled = tf.squeeze(feat_sampled, 2)

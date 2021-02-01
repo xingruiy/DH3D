@@ -36,8 +36,8 @@ def desc_local_loss(outs_dict, pos_r=0.5, search_r=20, margin=0.8, extra=False, 
     feat0, feat1 = tf.split(outs_dict['feat_sampled'], 2, axis=0)
     rot = outs_dict['R']
 
-    xyz0_warp = tf.matmul(xyz0, rot)
-    xyzdist_sqrt = tf.sqrt(pairwise_dist(xyz0_warp, xyz1) + 1e-10)
+    xyz0_warp = tf.matmul(xyz0[:, :, 0:3], rot)
+    xyzdist_sqrt = tf.sqrt(pairwise_dist(xyz0_warp, xyz1[:, :, 0:3]) + 1e-10)
     is_out_of_safe_radius = tf.greater(xyzdist_sqrt, pos_r * 2)
     is_within_search_radius = tf.less(xyzdist_sqrt, search_r)
     is_neg = tf.cast(tf.logical_and(is_out_of_safe_radius,

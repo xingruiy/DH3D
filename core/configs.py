@@ -60,7 +60,7 @@ class ConfigFactory(object):
 
             # data
             'num_points': 8192,
-            'batch_size': 10,
+            'batch_size': 1,
             'num_pos': 1,
             'num_neg': 0,
             'other_neg': False,

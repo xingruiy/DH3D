@@ -36,9 +36,10 @@ sys.path.append(os.path.dirname(BASE_DIR))
 # local train
 def get_train_local_selfpair(cfg):
     augmentation = ['Jitter']
-    df = Local_train_dataset_selfpair(basedir=cfg.data_basedir, aug=augmentation,
-                                      sample_nodes=cfg.sampled_kpnum,
-                                      train_file=os.path.join(cfg.data_basedir, 'oxford_train_local_gt.pickle'))
+    df = Local_train_dataset_selfpair(
+        basedir=cfg.data_basedir, aug=augmentation,
+        sample_nodes=cfg.sampled_kpnum, dim=6,
+        train_file=os.path.join(cfg.data_basedir, 'tum_rgbd_test.pickle'))
     df = BatchData(df, cfg.batch_size)
     return df
 
@@ -48,11 +49,12 @@ def get_train_global_triplet(cfg={}):
     augmentation = ['Jitter', 'RotateSmall', 'Rotate1D']
     if 'data_aug' in cfg:
         augmentation = cfg.data_aug
-    df = Global_train_dataset_triplet(basedir=cfg.data_basedir,
-                                      train_file=os.path.join(
-                                          cfg.data_basedir, 'oxford_train_global_gt.pickle'),
-                                      posnum=cfg.num_pos, negnum=cfg.num_neg, other_neg=cfg.other_neg,
-                                      aug=augmentation)
+    df = Global_train_dataset_triplet(
+        basedir=cfg.data_basedir,
+        train_file=os.path.join(
+            cfg.data_basedir, 'tum_rgbd_test.pickle'),
+        posnum=cfg.num_pos, negnum=cfg.num_neg, other_neg=cfg.other_neg,
+        aug=augmentation)
     df = BatchData(df, cfg.batch_size)
     return df
 
@@ -103,7 +105,9 @@ class Local_test_dataset(DataFlow):
 
 
 class Local_train_dataset_selfpair(RNGDataFlow):
-    def __init__(self, basedir, train_file, numpts=8192, sample_nodes=256, dim=3, rot_maxv=np.pi, aug=['Jitter'], shuffle=True):
+    def __init__(self, basedir, train_file, numpts=8192,
+                 sample_nodes=256, dim=3, rot_maxv=np.pi,
+                 aug=['Jitter'], shuffle=True):
         assert os.path.isdir(basedir)
         self.basedir = basedir
         self.shuffle = shuffle
@@ -120,7 +124,9 @@ class Local_train_dataset_selfpair(RNGDataFlow):
 
     def process_point_cloud(self, cloud):
         cloud, _ = get_fixednum_pcd(
-            cloud, self.numpts, randsample=True, need_downsample=False, sortby_dis=False)
+            cloud, self.numpts, randsample=True,
+            need_downsample=False, sortby_dis=False)
+        print(cloud.shape)
         # augmentation
         for a in self.augmentation:
             cloud = a.apply(cloud)
@@ -130,8 +136,8 @@ class Local_train_dataset_selfpair(RNGDataFlow):
         pcfile = self.dict[ind]['query']
         pcfile = os.path.join(self.basedir, pcfile + '.bin')
         cloud = load_single_pcfile(pcfile, dim=self.dim)
-        pc1 = self.process_point_cloud(cloud[:, 0:3])  # augmentation
-        pc2 = self.process_point_cloud(cloud[:, 0:3])  # augmentation
+        pc1 = self.process_point_cloud(cloud)  # augmentation
+        pc2 = self.process_point_cloud(cloud)  # augmentation
 
         # 1D rotate
         rotation_angle = np.random.uniform(
@@ -141,7 +147,8 @@ class Local_train_dataset_selfpair(RNGDataFlow):
         rotation_matrix = np.array([[cosval, sinval, 0],
                                     [-sinval, cosval, 0],
                                     [0, 0, 1]])
-        pc2_trans = np.dot(pc2, rotation_matrix)
+        pc2_trans = pc2
+        pc2_trans[:, 0:3] = np.dot(pc2[:, 0:3], rotation_matrix)
 
         # sample
         farthest_sampler = FarthestSampler()
@@ -151,8 +158,8 @@ class Local_train_dataset_selfpair(RNGDataFlow):
         anc_subset_node_inds = farthest_sampler.sample(
             pcd1_subset, self.sample_nodes)
         anc_node_inds = pcd1_subset_ind[anc_subset_node_inds]
-        tree = KDTree(pc2)
-        _, pos_node_inds = tree.query(pc1[anc_node_inds, :], k=1)
+        tree = KDTree(pc2[:, 0:3])
+        _, pos_node_inds = tree.query(pc1[anc_node_inds, 0:3], k=1)
         pos_node_inds = pos_node_inds.flatten()
         return pc1, pc2_trans, rotation_matrix, anc_node_inds, pos_node_inds
 
@@ -278,10 +285,16 @@ class Global_test_dataset(RNGDataFlow):
                 self.basedir, name), dim=self.pcd_dim, dtype=self.pcd_dtype)
 
             if pcd.shape[0] != self.numpts:
-                pcd, ori_num = get_fixednum_pcd(pcd, self.numpts, randsample=True, need_downsample=False,
-                                                sortby_dis=True)
+                pcd, ori_num = get_fixednum_pcd(
+                    pcd, self.numpts, randsample=True,
+                    need_downsample=False, sortby_dis=True)
             yield [pcd, name]
 
 
 if __name__ == '__main__':
-    pass
+    # gen fake data
+    fake_data = dict()
+    fake_data[0] = {'query': '0', 'positives': ['1', '2', '3'],
+                    'nonnegatives': ['80', '70'], 'xyz': [0, 0, 0]}
+    with open('./data/tum_rgbd_test.pickle', 'wb') as f:
+        pickle.dump(fake_data, f)

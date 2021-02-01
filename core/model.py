@@ -62,18 +62,18 @@ class DH3D(ModelDesc):
         # anc, pos, R, ind1, ind2, knn
         # pointclouds
         ret = [tf.TensorSpec(
-            (self.config.batch_size, self.config.num_points, 3), tf.float32, 'anchor')]
+            (self.config.batch_size, self.config.num_points, 6), tf.float32, 'anchor')]
         if self.config.num_pos > 0:
             ret.append(
-                tf.TensorSpec((self.config.batch_size, self.config.num_points * self.config.num_pos, 3), tf.float32,
+                tf.TensorSpec((self.config.batch_size, self.config.num_points * self.config.num_pos, 6), tf.float32,
                               'pos'))
         if self.config.num_neg > 0:
             ret.append(
-                tf.TensorSpec((self.config.batch_size, self.config.num_points * self.config.num_neg, 3), tf.float32,
+                tf.TensorSpec((self.config.batch_size, self.config.num_points * self.config.num_neg, 6), tf.float32,
                               'neg'))
         if self.config.other_neg:
             ret.append(tf.TensorSpec((self.config.batch_size,
-                                      self.config.num_points, 3), tf.float32, 'otherneg'))
+                                      self.config.num_points, 6), tf.float32, 'otherneg'))
 
         # rotation for local training
         if self.config.input_R:
@@ -150,10 +150,10 @@ class DH3D(ModelDesc):
         pcdset = [inputs_dict['anchor']]
         if self.config.num_pos > 0:
             pcdset.append(tf.reshape(
-                inputs_dict['pos'], [-1, self.config.num_points, 3]))
+                inputs_dict['pos'], [-1, self.config.num_points, 6]))
         if self.config.num_neg > 0:
             pcdset.append(tf.reshape(
-                inputs_dict['neg'], [-1, self.config.num_points, 3]))
+                inputs_dict['neg'], [-1, self.config.num_points, 6]))
         if self.config.other_neg:
             pcdset.append(inputs_dict['otherneg'])
         # query+pos+neg+otherneg, numpts, 3

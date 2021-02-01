@@ -90,15 +90,15 @@ def log_config_info(config):
 def get_fixednum_pcd(cloud, targetnum, randsample=True, need_downsample=False, sortby_dis=True):
     if need_downsample:
         cloud = downsample(cloud)
-    ind = remove_noise(cloud)
+    ind = remove_noise(cloud[:, 0:3])
     cloud = cloud[ind, :]
     ori_num = cloud.shape[0]
     if cloud.shape[0] > targetnum:
         if sortby_dis:
-            centroid = np.mean(cloud, axis=0)
-            dis = np.sum(np.square(cloud - centroid), axis=1)
+            centroid = np.mean(cloud[:, 0:3], axis=0)
+            dis = np.sum(np.square(cloud[:, 0:3] - centroid), axis=1)
             ind = np.argsort(dis)
-            cloud = cloud[ind[0:targetnum], :3]
+            cloud = cloud[ind[0:targetnum], :]
         choice_idx = np.random.choice(cloud.shape[0], targetnum, replace=False)
         cloud = cloud[choice_idx, :]
         ori_num = targetnum
@@ -108,7 +108,8 @@ def get_fixednum_pcd(cloud, targetnum, randsample=True, need_downsample=False, s
             pad_points = cloud[np.random.choice(
                 cloud.shape[0], size=num_to_pad, replace=True), :]
         else:
-            pad_points = np.ones([num_to_pad, 3], dtype=np.float32) * 100000
+            pad_points = np.ones([num_to_pad, self.dim],
+                                 dtype=np.float32) * 100000
 
         cloud = np.concatenate((cloud, pad_points), axis=0)
     return cloud, ori_num
@@ -150,7 +151,7 @@ def load_descriptor_bin(filename, dim=131, dtype=np.float32):
 def load_single_pcfile(filename, dim=3, dtype=np.float32):
     pc = np.fromfile(filename, dtype=dtype)
     pc = np.reshape(pc, (pc.shape[0] // dim, dim))
-    return pc[:, 0:3]
+    return pc
 
 
 def write_to_bin(points, filename):

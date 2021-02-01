@@ -66,6 +66,7 @@ def se_res_bottleneck(l, pool_l, ch_out, name):
 def flex_conv_dilate(xyz, feat, dilate, knn, outdims, scope, knn_indices=None, concat=True,
                      add_se='max_pool', upsample=True, **unused):
     num_point = xyz.get_shape()[1]
+
     npoint = num_point // dilate
     with tf.compat.v1.variable_scope(scope) as sc:
         if dilate > 1:
@@ -101,7 +102,8 @@ def flex_conv_dilate(xyz, feat, dilate, knn, outdims, scope, knn_indices=None, c
 
         # upsampling
         if upsample and dilate > 1:
-            dist, idx = three_nn(xyz, points_sampled)
+
+            dist, idx = three_nn(xyz[:, :, 0:3], points_sampled[:, :, 0:3])
             dist = tf.maximum(dist, 1e-10)
             norm = tf.reduce_sum(input_tensor=(
                 1.0 / dist), axis=2, keepdims=True)
@@ -120,22 +122,25 @@ def backbone_local_dilate(points, featdim, knn_ind, dilate2=8, **unused):
     nn_8 = knn_ind[:, 0:8, :]
 
     # conv1d
+
     init_features = convolution_pointset_withBatchnorm(
         tf.transpose(a=points, perm=[0, 2, 1]), nn_8, 32, name='initconv')
     init_features = flex_pooling(init_features, nn_8, name='init_pool')
     init_features = tf.transpose(a=init_features, perm=[0, 2, 1])
 
     # stage 1
-    newpoints1, x1 = flex_conv_dilate(points, init_features, dilate=1, knn=8, outdims=[64, 64], scope='stage1',
-                                      knn_indices=nn_8, concat=False, add_se='max_pool')
+    newpoints1, x1 = flex_conv_dilate(
+        points, init_features, dilate=1, knn=8, outdims=[64, 64], scope='stage1',
+        knn_indices=nn_8, concat=False, add_se='max_pool')
 
     # stage 2
     x2 = feature_conv1d_1(
         x1, 64, name='before_stage2_conv1d', c_last=True, ac_func=BNReLU)
-    print(x2)
-    newpoints2, x2 = flex_conv_dilate(newpoints1, x2, dilate=dilate2, knn=8, outdims=[128, 128], scope='stage2',
-                                      knn_indices=None, concat=True,
-                                      add_se='max_pool')
+    newpoints2, x2 = flex_conv_dilate(
+        newpoints1, x2, dilate=dilate2, knn=8, outdims=[128, 128], scope='stage2',
+        knn_indices=None, concat=True,
+        add_se='max_pool')
+
     # combine
     feat = feature_conv1d_1(x1, 128, 'local_stage1_shortcut',
                             c_last=True, ac_func=BNReLU) + x2

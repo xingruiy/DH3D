@@ -58,14 +58,15 @@ def get_config(model, config):
 
 
 if __name__ == '__main__':
-
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--gpu', help='comma separated list of GPU(s) to use.', type=str, default='0')
-    parser.add_argument('--logdir', help='log directory', default='logs')
-    parser.add_argument('--logact', type=str,
-                        help='action to log directory', default='k')
-    parser.add_argument('--cfg', type=str, default='basic_config')
+    parser.add_argument(
+        '--logdir', help='log directory', default='logs')
+    parser.add_argument(
+        '--logact', type=str, help='action to log directory', default='k')
+    parser.add_argument(
+        '--cfg', type=str, default='basic_config')
 
     args = parser.parse_args()
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
@@ -81,6 +82,4 @@ if __name__ == '__main__':
     log_config_info(configs)
 
     train_configs = get_config(DH3D, configs)
-
-    # lauch training
     launch_train_with_config(train_configs, SimpleTrainer())
