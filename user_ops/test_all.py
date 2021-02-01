@@ -19,11 +19,14 @@
 
 import unittest
 import glob
+import tensorflow as tf
 
-operations = [fn[:-3] for fn in glob.glob('test_*.py') if not '_all' in fn]
+operations = [fn[:-3]
+              for fn in glob.glob('test_*.py') if not ('_all' and '_knn_bruteforce') in fn]
 suite = unittest.TestSuite()
 
 for op in operations:
     suite.addTest(unittest.defaultTestLoader.loadTestsFromName(op))
 
+tf.compat.v1.disable_eager_execution()
 unittest.TextTestRunner().run(suite)

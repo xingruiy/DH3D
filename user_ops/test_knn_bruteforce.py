@@ -52,8 +52,8 @@ class KnnBruteforceTest(VerboseTestCase):
             actual_nn, actual_dist = knn_bruteforce(case.position_op, k=4)
             # actual_nn, actual_dist = sess.run([actual_nn, actual_dist])
 
-        self.assertAllClose(expected_dist, actual_dist)
-        self.assertAllClose(expected_nn, actual_nn)
+        self.assertAllClose(expected_dist, actual_dist.numpy())
+        self.assertAllClose(expected_nn, actual_nn.numpy())
 
     def test_forward_cpu(self):
         self._forward(use_gpu=False)
