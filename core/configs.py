@@ -34,7 +34,6 @@ class ConfigFactory(object):
 
     def basic_config(self):
         config = {
-
             # train
             'training_local': True,
             'extract_global': False,

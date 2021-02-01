@@ -36,16 +36,13 @@ namespace ConvPointsetCuda
             int C_Dout = 32, int C_Din = 64>
   struct ForwardKernel;
 
-  template <typename Dtype, typename NBtype, int C_N, int C_Dout,
-            int C_Din>
-  __global__ void runForwardKernel(
-      const ForwardKernel<Dtype, NBtype, C_N, C_Dout, C_Din> kernel)
+  template <typename Dtype, typename NBtype, int C_N, int C_Dout, int C_Din>
+  __global__ void runForwardKernel(const ForwardKernel<Dtype, NBtype, C_N, C_Dout, C_Din> kernel)
   {
     kernel();
   }
 
-  template <typename Dtype, typename NBtype, int C_N, int C_Dout,
-            int C_Din>
+  template <typename Dtype, typename NBtype, int C_N, int C_Dout, int C_Din>
   struct ForwardKernel
   {
     enum

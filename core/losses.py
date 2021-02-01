@@ -50,7 +50,8 @@ def desc_local_loss(outs_dict, pos_r=0.5, search_r=20, margin=0.8, extra=False, 
     num_neg = tf.cast(num_neg, tf.float32, name='num_neg')
     num_pos = tf.cast(num_pos, tf.float32, name='num_pos')
 
-    pos_loss = tf.reduce_sum(input_tensor=is_pos * feat_dist) / (num_pos + 1e-10)
+    pos_loss = tf.reduce_sum(input_tensor=is_pos *
+                             feat_dist) / (num_pos + 1e-10)
     neg_loss = tf.reduce_sum(
         input_tensor=is_neg * tf.nn.relu(margin - feat_dist)) / (num_neg + 1e-10)
 
