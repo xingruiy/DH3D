@@ -126,7 +126,7 @@ class Local_train_dataset_selfpair(RNGDataFlow):
         cloud, _ = get_fixednum_pcd(
             cloud, self.numpts, randsample=True,
             need_downsample=False, sortby_dis=False)
-        print(cloud.shape)
+
         # augmentation
         for a in self.augmentation:
             cloud = a.apply(cloud)

@@ -33,13 +33,13 @@ sys.path.append(os.path.dirname(BASE_DIR))
 
 
 class DH3D(ModelDesc):
-
     def __init__(self, config):
         super(ModelDesc, self).__init__()
         self.config = config
         # # if num_points > 8192 since the maximum
         self.input_knn_indices = True if self.config.num_points > 8192 else False
         # number of knn_bruteforce is 8192
+        self.dim = 6
 
         # local
         self.local_backbone = self.config.local_backbone
@@ -62,18 +62,18 @@ class DH3D(ModelDesc):
         # anc, pos, R, ind1, ind2, knn
         # pointclouds
         ret = [tf.TensorSpec(
-            (self.config.batch_size, self.config.num_points, 6), tf.float32, 'anchor')]
+            (self.config.batch_size, self.config.num_points, self.dim), tf.float32, 'anchor')]
         if self.config.num_pos > 0:
             ret.append(
-                tf.TensorSpec((self.config.batch_size, self.config.num_points * self.config.num_pos, 6), tf.float32,
-                              'pos'))
+                tf.TensorSpec((self.config.batch_size, self.config.num_points * self.config.num_pos,
+                               self.dim), tf.float32, 'pos'))
         if self.config.num_neg > 0:
             ret.append(
-                tf.TensorSpec((self.config.batch_size, self.config.num_points * self.config.num_neg, 6), tf.float32,
-                              'neg'))
+                tf.TensorSpec((self.config.batch_size, self.config.num_points * self.config.num_neg,
+                               self.dim), tf.float32, 'neg'))
         if self.config.other_neg:
-            ret.append(tf.TensorSpec((self.config.batch_size,
-                                      self.config.num_points, 6), tf.float32, 'otherneg'))
+            ret.append(tf.TensorSpec((self.config.batch_size, self.config.num_points,
+                                      self.dim), tf.float32, 'otherneg'))
 
         # rotation for local training
         if self.config.input_R:
@@ -111,7 +111,8 @@ class DH3D(ModelDesc):
                 'points': points,
                 'featdim': self.config.featdim,
                 'knn_ind': self.knn_indices,
-                'dilate': self.config.dilate
+                'dilate': self.config.dilate,
+                'pdim': 6
             }
             newpoints, localdesc = getattr(
                 backbones, self.local_backbone)(**inputs_dict)
@@ -126,8 +127,8 @@ class DH3D(ModelDesc):
 
             # if sample
             if self.config.global_subsample > 0:
-                newpoints, forglobal, kp_indices = backbones.subsample(newpoints, forglobal, self.global_subsample,
-                                                                       kp_idx=None)
+                newpoints, forglobal, kp_indices = backbones.subsample(
+                    newpoints, forglobal, self.global_subsample, kp_idx=None)
             # global attention
             global_att = backbones.globalatt_block(
                 forglobal, scope="globalatt", ac_func=BNReLU)
@@ -150,10 +151,10 @@ class DH3D(ModelDesc):
         pcdset = [inputs_dict['anchor']]
         if self.config.num_pos > 0:
             pcdset.append(tf.reshape(
-                inputs_dict['pos'], [-1, self.config.num_points, 6]))
+                inputs_dict['pos'], [-1, self.config.num_points, self.dim]))
         if self.config.num_neg > 0:
             pcdset.append(tf.reshape(
-                inputs_dict['neg'], [-1, self.config.num_points, 6]))
+                inputs_dict['neg'], [-1, self.config.num_points, self.dim]))
         if self.config.other_neg:
             pcdset.append(inputs_dict['otherneg'])
         # query+pos+neg+otherneg, numpts, 3
@@ -170,7 +171,7 @@ class DH3D(ModelDesc):
                 a=knn_inds, perm=[0, 2, 1])  # batch, k. numpts
         else:
             self.knn_indices, distances = knn_bruteforce(
-                tf.transpose(points, perm=[0, 2, 1]), k=self.config.knn_num)
+                tf.transpose(points[:, :, 0:3], perm=[0, 2, 1]), k=self.config.knn_num)
 
         if self.config.sampled_kpnum > 0:
             sample_nodes_concat = tf.concat(

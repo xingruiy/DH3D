@@ -165,7 +165,7 @@ def best_pos_distance(query, pos_vecs):
 
 def lazy_triplet_loss_impl(q_vec, pos_vecs, neg_vecs, margin, scope="lazy_triplet_loss", **kwargs):
     with tf.compat.v1.name_scope(scope):
-        print("margin!!!!!!!!!!!!!!!!!!!!!111", margin)
+        print("margin!!!!!!!!!!!!!!!!!!!!!", margin)
         best_pos = best_pos_distance(q_vec, pos_vecs)
         num_neg = neg_vecs.get_shape()[1]
         batch = q_vec.get_shape()[0]

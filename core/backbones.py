@@ -103,7 +103,7 @@ def flex_conv_dilate(xyz, feat, dilate, knn, outdims, scope, knn_indices=None, c
         # upsampling
         if upsample and dilate > 1:
 
-            dist, idx = three_nn(xyz[:, :, 0:3], points_sampled[:, :, 0:3])
+            dist, idx = three_nn(xyz, points_sampled)
             dist = tf.maximum(dist, 1e-10)
             norm = tf.reduce_sum(input_tensor=(
                 1.0 / dist), axis=2, keepdims=True)
@@ -118,7 +118,7 @@ def flex_conv_dilate(xyz, feat, dilate, knn, outdims, scope, knn_indices=None, c
         return xyz, new_feat
 
 
-def backbone_local_dilate(points, featdim, knn_ind, dilate2=8, **unused):
+def backbone_local_dilate(points, featdim, knn_ind, dilate2=8, pdim=3, **unused):
     nn_8 = knn_ind[:, 0:8, :]
 
     # conv1d
@@ -127,6 +127,9 @@ def backbone_local_dilate(points, featdim, knn_ind, dilate2=8, **unused):
         tf.transpose(a=points, perm=[0, 2, 1]), nn_8, 32, name='initconv')
     init_features = flex_pooling(init_features, nn_8, name='init_pool')
     init_features = tf.transpose(a=init_features, perm=[0, 2, 1])
+
+    if pdim > 3:
+        points = points[:, :, 0:3]
 
     # stage 1
     newpoints1, x1 = flex_conv_dilate(
