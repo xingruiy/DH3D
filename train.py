@@ -48,7 +48,7 @@ def get_config(model, config):
             ProgressBar(['total_cost']),
             RunUpdateOps()
         ],
-        max_epoch=50,
+        max_epoch=config.max_epochs
     )
     if config.loadpath is not None:
         train_configs.session_init = SmartInit(
@@ -67,6 +67,7 @@ if __name__ == '__main__':
         '--logact', type=str, help='action to log directory', default='k')
     parser.add_argument(
         '--cfg', type=str, default='basic_config')
+    parser.add_argument('--load', type=int, default=-1)
 
     args = parser.parse_args()
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
@@ -78,6 +79,10 @@ if __name__ == '__main__':
         print('no gpu device found!')
 
     configs = ConfigFactory(args.cfg).getconfig()
+
+    if args.load >= 0:
+        configs.loadpath = 'logs/model-{}'.format(args.load)
+
     logger.set_logger_dir(args.logdir, action=args.logact)
     log_config_info(configs)
 

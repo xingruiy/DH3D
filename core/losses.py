@@ -27,7 +27,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(BASE_DIR)
 
 
-def desc_local_loss(outs_dict, pos_r=0.5, search_r=20, margin=0.8, extra=False, neg_weight=5, **kwargs):
+def desc_local_loss(outs_dict, pos_r=0.05, search_r=1, margin=0.4, extra=False, neg_weight=5, **kwargs):
     """
     n-tuple loss
     """
@@ -36,8 +36,8 @@ def desc_local_loss(outs_dict, pos_r=0.5, search_r=20, margin=0.8, extra=False, 
     feat0, feat1 = tf.split(outs_dict['feat_sampled'], 2, axis=0)
     rot = outs_dict['R']
 
-    xyz0_warp = tf.matmul(xyz0[:, :, 0:3], rot)
-    xyzdist_sqrt = tf.sqrt(pairwise_dist(xyz0_warp, xyz1[:, :, 0:3]) + 1e-10)
+    xyz0_warp = tf.matmul(xyz0, rot)
+    xyzdist_sqrt = tf.sqrt(pairwise_dist(xyz0_warp, xyz1) + 1e-10)
     is_out_of_safe_radius = tf.greater(xyzdist_sqrt, pos_r * 2)
     is_within_search_radius = tf.less(xyzdist_sqrt, search_r)
     is_neg = tf.cast(tf.logical_and(is_out_of_safe_radius,
@@ -50,10 +50,9 @@ def desc_local_loss(outs_dict, pos_r=0.5, search_r=20, margin=0.8, extra=False, 
     num_neg = tf.cast(num_neg, tf.float32, name='num_neg')
     num_pos = tf.cast(num_pos, tf.float32, name='num_pos')
 
-    pos_loss = tf.reduce_sum(input_tensor=is_pos *
-                             feat_dist) / (num_pos + 1e-10)
+    pos_loss = tf.reduce_sum(is_pos * feat_dist) / (num_pos + 1e-10)
     neg_loss = tf.reduce_sum(
-        input_tensor=is_neg * tf.nn.relu(margin - feat_dist)) / (num_neg + 1e-10)
+        is_neg * tf.nn.relu(margin - feat_dist)) / (num_neg + 1e-10)
 
     pos_loss = tf.identity(pos_loss, name='pos_loss')
     neg_loss = tf.identity(neg_weight * neg_loss, name='neg_loss')
@@ -66,7 +65,7 @@ def desc_local_loss(outs_dict, pos_r=0.5, search_r=20, margin=0.8, extra=False, 
     return loss_sum
 
 
-def local_detection_loss_nn(outs_dict, ar_th=0.3, det_k=16, ar_nn_k=5, pos_r=0.3, use_hardest_neg=True, **unused):
+def local_detection_loss_nn(outs_dict, ar_th=0.3, det_k=16, ar_nn_k=5, pos_r=0.1, use_hardest_neg=True, **unused):
     xyz0, xyz1 = tf.split(outs_dict['xyz'], 2, axis=0)
     feat0, feat1 = tf.split(outs_dict['feat'], 2, axis=0)
     sample_ind0, sample_ind1 = tf.split(

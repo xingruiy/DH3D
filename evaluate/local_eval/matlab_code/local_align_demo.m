@@ -23,7 +23,7 @@ MAX_MATCHES = 1000; % Maximum number of inlier+outlier matches to draw
 isPrintWrong = true;
 
 ext_name = '_nms_res.bin';
-DATA_FOLDER = '../demo_data';
+DATA_FOLDER = '../../../data/';
 RES_FOLDER = '../demo_data/res_local';
 
 
@@ -31,10 +31,10 @@ VISUALIZE_REG=true;
 VISUAL_WRONG=false;
 
 
-t_gt = [0.1374   -0.3046   -0.0592];
-q_gt = [0.9892   -0.0026    0.0257    0.1444];
-anc_idx = '642';
-pos_idx = '268';
+t_gt = [0   0  0];
+q_gt = [1   0    0    0];
+anc_idx = '0';
+pos_idx = '10';
 
 
 
@@ -42,7 +42,7 @@ T_gt = [quat2rotm(q_gt), t_gt'];
         
                
 % load anc pc
-anc_pc_np = Utils.loadPointCloud(fullfile(DATA_FOLDER, sprintf('%s.bin', anc_idx)), 3); 
+anc_pc_np = Utils.loadPointCloud(fullfile(DATA_FOLDER, sprintf('%s.bin', anc_idx)), 6); 
 % load anc desc
 anc_xyz_desc = Utils.load_descriptors(fullfile(RES_FOLDER, sprintf('%s%s', anc_idx, ext_name)) , sum(FEATURE_DIM+4));
 
@@ -51,7 +51,7 @@ anc_xyz_desc = Utils.load_descriptors(fullfile(RES_FOLDER, sprintf('%s%s', anc_i
 
 
 % load pos pc
-pos_pc_np = Utils.loadPointCloud(fullfile(DATA_FOLDER, sprintf('%s.bin', pos_idx)), 3);  
+pos_pc_np = Utils.loadPointCloud(fullfile(DATA_FOLDER, sprintf('%s.bin', pos_idx)), 6);  
 % load pos desc
 pos_xyz_desc = Utils.load_descriptors(fullfile(RES_FOLDER, sprintf('%s%s', pos_idx, ext_name)), sum(FEATURE_DIM+4));
 

@@ -108,7 +108,7 @@ def get_fixednum_pcd(cloud, targetnum, randsample=True, need_downsample=False, s
             pad_points = cloud[np.random.choice(
                 cloud.shape[0], size=num_to_pad, replace=True), :]
         else:
-            pad_points = np.ones([num_to_pad, self.dim],
+            pad_points = np.ones([num_to_pad, 6],
                                  dtype=np.float32) * 100000
 
         cloud = np.concatenate((cloud, pad_points), axis=0)
@@ -151,6 +151,7 @@ def load_descriptor_bin(filename, dim=131, dtype=np.float32):
 def load_single_pcfile(filename, dim=3, dtype=np.float32):
     pc = np.fromfile(filename, dtype=dtype)
     pc = np.reshape(pc, (pc.shape[0] // dim, dim))
+    pc[:, 0:3] -= np.sum(pc[:, 0:3], axis=0)/8192
     return pc
 
 
@@ -169,12 +170,14 @@ def restore_scale_pcd(pcd, knn=3):
     return pcd
 
 
-def downsample(pcd, voxelsize=0.2):
+def downsample(pcd, voxelsize=0.03):
     cloud = o3d.geometry.PointCloud()
-    cloud.points = o3d.utility.Vector3dVector(pcd)
+    cloud.points = o3d.utility.Vector3dVector(pcd[:, 0:3])
+    cloud.colors = o3d.utility.Vector3dVector(pcd[:, 3:])
     cloud_down = cloud.voxel_down_sample(voxel_size=voxelsize)
     cloud_down_p = np.asarray(cloud_down.points)
-    return cloud_down_p
+    cloud_down_c = np.asarray(cloud_down.colors)
+    return np.concatenate([cloud_down_p, cloud_down_c], axis=-1)
 
 
 def remove_noise(pcd, nb_points=4, radius=1.0):
@@ -211,7 +214,30 @@ def plot_pc_pair(s, t):
     pcd.points = o3d.utility.Vector3dVector(points)
     pcd.colors = o3d.utility.Vector3dVector(colors)
     origin_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(
-        size=5.0, origin=[0, 0, 0])
+        size=1.0, origin=[0, 0, 0])
+    o3d.visualization.draw_geometries(
+        [pcd, origin_frame])
+
+
+def plot_pc_pair(s, s1, t, t1):
+    if not isinstance(s, np.ndarray):
+        s = np.asarray(s.points)
+    if not isinstance(t, np.ndarray):
+        s1 = np.asarray(t.points)
+    if not isinstance(t, np.ndarray):
+        t = np.asarray(t.points)
+    if not isinstance(t, np.ndarray):
+        t1 = np.asarray(t.points)
+
+    s_colors = s1
+    t_colors = t1
+    points = np.vstack([s, t])
+    colors = np.vstack([s_colors, t_colors])
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(points)
+    pcd.colors = o3d.utility.Vector3dVector(colors)
+    origin_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(
+        size=1.0, origin=[0, 0, 0])
     o3d.visualization.draw_geometries(
         [pcd, origin_frame])
 

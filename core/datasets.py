@@ -20,6 +20,7 @@ import random
 import sys
 
 import numpy as np
+from scipy.spatial.transform import Rotation as R
 from sklearn.neighbors import KDTree
 from tensorpack import DataFlow, RNGDataFlow
 from tensorpack.dataflow import BatchData, PrefetchDataZMQ, TestDataSpeed
@@ -85,7 +86,7 @@ class Local_test_dataset(DataFlow):
         if ori_num != self.numpts:
             # downsample is not required if the pointcloud is already processed by the voxelsize around 0.2
             cloud, ori_num = get_fixednum_pcd(
-                cloud, self.numpts, randsample=False, need_downsample=True)
+                cloud, self.numpts, randsample=False, need_downsample=False)
         else:
             choice_idx = np.random.choice(
                 cloud.shape[0], self.numpts, replace=False)
@@ -94,7 +95,7 @@ class Local_test_dataset(DataFlow):
         name = os.path.basename(pcfile)
         ret = [cloud, name, ori_num]
         if self.knn > 0:
-            knn_ind, distances = get_knn(cloud, self.knn)
+            knn_ind, distances = get_knn(cloud[:, 0:3], self.knn)
             ret.append(knn_ind)
         return ret
 
@@ -132,6 +133,27 @@ class Local_train_dataset_selfpair(RNGDataFlow):
             cloud = a.apply(cloud)
         return cloud
 
+    def randRot(self):
+        rotation_angle = np.random.uniform(
+            low=-self.rot_maxv, high=self.rot_maxv)
+        cosval = np.cos(rotation_angle)
+        sinval = np.sin(rotation_angle)
+        rotation_matrix = np.array([[cosval, sinval, 0],
+                                    [-sinval, cosval, 0],
+                                    [0, 0, 1]])
+        return rotation_matrix
+
+    def randRot3D(self, deflection=1):
+        alpha = np.random.uniform(
+            low=-self.rot_maxv, high=self.rot_maxv)
+        beta = np.random.uniform(
+            low=-self.rot_maxv, high=self.rot_maxv)
+        gamma = np.random.uniform(
+            low=-self.rot_maxv, high=self.rot_maxv)
+
+        r = R.from_euler('zyx', [alpha, beta, gamma])
+        return r.as_matrix()
+
     def loadPair(self, ind):
         pcfile = self.dict[ind]['query']
         pcfile = os.path.join(self.basedir, pcfile + '.bin')
@@ -140,15 +162,12 @@ class Local_train_dataset_selfpair(RNGDataFlow):
         pc2 = self.process_point_cloud(cloud)  # augmentation
 
         # 1D rotate
-        rotation_angle = np.random.uniform(
-            low=-self.rot_maxv, high=self.rot_maxv)
-        cosval = np.cos(rotation_angle)
-        sinval = np.sin(rotation_angle)
-        rotation_matrix = np.array([[cosval, sinval, 0],
-                                    [-sinval, cosval, 0],
-                                    [0, 0, 1]])
-        pc2_trans = pc2
+        rotation_matrix = self.randRot3D()
+        pc2_trans = pc2.copy()
         pc2_trans[:, 0:3] = np.dot(pc2[:, 0:3], rotation_matrix)
+
+        # plot_pc_pair(pc1[:, 0:3], pc1[:, 3:],
+        #              pc2[:, 0:3], pc2[:, 3:])
 
         # sample
         farthest_sampler = FarthestSampler()
@@ -294,7 +313,7 @@ class Global_test_dataset(RNGDataFlow):
 if __name__ == '__main__':
     # gen fake data
     fake_data = dict()
-    fake_data[0] = {'query': '0', 'positives': ['1', '2', '3'],
-                    'nonnegatives': ['80', '70'], 'xyz': [0, 0, 0]}
+    for i in range(116):
+        fake_data[i] = {'query': '{}'.format(i)}
     with open('./data/tum_rgbd_test.pickle', 'wb') as f:
         pickle.dump(fake_data, f)

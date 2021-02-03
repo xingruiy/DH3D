@@ -20,6 +20,7 @@ import os
 import sys
 
 import numpy as np
+import tensorflow as tf
 from core.configs import dotdict
 from core.datasets import Local_test_dataset
 from core.model import DH3D
@@ -38,9 +39,9 @@ sys.path.append(os.path.dirname(BASE_DIR))
 def get_eval_oxford_data(cfg={}):
     querybatch = cfg.batch_size
     totalbatch = querybatch
-    df = Local_test_dataset(basedir='evaluate/local_eval/demo_data', dim=3,
+    df = Local_test_dataset(basedir='data/', dim=6,
                             numpts=cfg.get('num_points'),
-                            knn_require=cfg.get('knn_num'),
+                            knn_require=0,
                             )
     df = BatchData(df, totalbatch, remainder=True)
     df.reset_state()
@@ -129,6 +130,7 @@ def perform_pred(df, totalbatch, predictor, eval_config):
                     [totalbatch - batch, numpts, knn_ind.shape[2]], dtype=np.int32)
                 knn_ind = np.vstack([knn_ind, padzeros])
 
+        print(pc.shape)
         if knn_ind is not None:
             result = predictor(pc, knn_ind)[0]
         else:
@@ -150,10 +152,11 @@ def pred_local_oxford(eval_args):
     mkdir_p(eval_args.save_dir)
     model_config = get_model_config(eval_args.ModelPath)
     ####===============set up graph ===================+##
-    if eval_args.dataset == 'oxford_lidar':
-        model_config.num_points = 16384
-    elif eval_args.dataset == 'oxford_dso':
-        model_config.num_points = 9000
+    # if eval_args.dataset == 'oxford_lidar':
+    #     model_config.num_points = 16384
+    # elif eval_args.dataset == 'oxford_dso':
+    #     model_config.num_points = 9000
+    model_config.num_points = 8192
     predictor = get_predictor(model_config, eval_args.ModelPath)
 
     ####===============data ===================+##
@@ -168,21 +171,29 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--gpu', help='comma separated list of GPU(s) to use.', default='0')
-    parser.add_argument('--save_dir', type=str,
-                        default='evaluate/local_eval/demo_data/res_local')
-    parser.add_argument('--ModelPath', type=str, help='Model to load (for evaluation)',
-                        default='models/local/localmodel')
-    parser.add_argument('--dataset', type=str,
-                        help='oxford_lidar or oxford_dso', default='oxford_lidar')
-    parser.add_argument('--save_all', action='store_true',
-                        help='save dense feature map, which can be helpful when evaluating with other 3D detectors', default=False)
-    parser.add_argument('--perform_nms', action='store_true',
-                        help='perform nms and save detected descriptors', default=False)
-    parser.add_argument('--nms_rad', type=float, default=0.5)
-    parser.add_argument('--nms_min_ratio', type=float, default=0.01)
-    parser.add_argument('--nms_max_kp', type=int, default=512)
+    parser.add_argument(
+        '--save_dir', type=str, default='evaluate/local_eval/demo_data/res_local')
+    parser.add_argument(
+        '--ModelPath', type=str, help='Model to load (for evaluation)', default='logs/model-2530')
+    parser.add_argument(
+        '--dataset', type=str, help='oxford_lidar or oxford_dso', default='oxford_lidar')
+    parser.add_argument(
+        '--save_all', action='store_true', help='save dense feature map, which can be helpful when evaluating with other 3D detectors', default=False)
+    parser.add_argument(
+        '--perform_nms', action='store_true', help='perform nms and save detected descriptors', default=False)
+    parser.add_argument(
+        '--nms_rad', type=float, default=0.03)
+    parser.add_argument(
+        '--nms_min_ratio', type=float, default=0.01)
+    parser.add_argument(
+        '--nms_max_kp', type=int, default=512)
 
     args = parser.parse_args()
-
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
+    physical_devices = tf.config.list_physical_devices('GPU')
+    try:
+        tf.config.experimental.set_memory_growth(physical_devices[0], True)
+    except:
+        print('no gpu device found!')
+
     pred_local_oxford(args)

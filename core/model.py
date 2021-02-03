@@ -186,7 +186,7 @@ class DH3D(ModelDesc):
 
         # get local features
         outs = {}
-        outs['xyz'] = points
+        outs['xyz'] = points[:, :, 0:3]
         outs['knn_indices'] = self.knn_indices
         if self.config.input_R:
             outs['R'] = inputs_dict['R']
@@ -210,7 +210,7 @@ class DH3D(ModelDesc):
 
         if self.config.sampled_kpnum > 0:
             outs['sample_nodes_concat'] = self.sample_nodes_concat
-            localxyzsample, localfeatsample, kp_indices = backbones.subsample(points, localdesc_l2normed,
+            localxyzsample, localfeatsample, kp_indices = backbones.subsample(points[:, :, 0:3], localdesc_l2normed,
                                                                               self.config.sampled_kpnum,
                                                                               kp_idx=self.sample_nodes_concat)
             outs['feat_sampled'] = localfeatsample

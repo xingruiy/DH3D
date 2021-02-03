@@ -43,7 +43,7 @@ class Jitter(Augmentation):
     Applies a small jitter to the position of each point
     '''
 
-    def __init__(self, sigma=0.05, clip=0.1):
+    def __init__(self, sigma=0.005, clip=0.01):
         self.sigma = sigma
         self.clip = clip
 

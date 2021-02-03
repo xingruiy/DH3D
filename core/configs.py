@@ -47,7 +47,7 @@ class ConfigFactory(object):
             'add_batch_norm': True,
             'loadpath': None,
 
-            'start_lr': 5e-4,
+            'start_lr': 1e-4,
             'decay_step': 5 * 2000,
             'decay_rate': 0.5,
             'add_weight_decay': True,
@@ -60,7 +60,7 @@ class ConfigFactory(object):
 
             # data
             'num_points': 8192,
-            'batch_size': 1,
+            'batch_size': 5,
             'num_pos': 1,
             'num_neg': 0,
             'other_neg': False,
@@ -79,8 +79,8 @@ class ConfigFactory(object):
             'pos_r': 0.5,
             'search_r': 20.0,
             'local_loss_weight': 1.0,
-
-            'savemodel_every_k_steps': 200,
+            'savemodel_every_k_steps': 500,
+            'max_epochs': 10
         }
         return config
 
@@ -90,13 +90,14 @@ class ConfigFactory(object):
         # for detection
         cfg.detection = True
         cfg.detection_block = 'detection_block'
-        cfg.loadpath = None
+        # cfg.loadpath = 'logs/model-3712'
         cfg.add_det_loss = True
         cfg.detection_loss = 'local_detection_loss_nn'
         cfg.ar_th = 0.4
         cfg.det_k = 16
         cfg.ar_nn_k = 5
         cfg.det_loss_weight = 0.2
+        cfg.max_epochs = 100
 
         return cfg
 
@@ -111,7 +112,7 @@ class ConfigFactory(object):
         cfg.freezebackbone = True
         cfg.freezedetection = True
 
-        cfg.start_lr = 5e-4
+        cfg.start_lr = 1e-4
         cfg.decay_step = 20000
         cfg.decay_rate = 0.9
 

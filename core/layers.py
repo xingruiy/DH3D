@@ -436,27 +436,29 @@ class Flex_Avg(Layer):
         return y
 
 
-def flex_convolution(features,
-                     positions,
-                     neighborhoods,
-                     filters,
-                     activation=None,
-                     kernel_initializer=None,
-                     position_bias_initializer=tf.compat.v1.zeros_initializer(),
-                     features_bias_initializer=tf.compat.v1.zeros_initializer(),
-                     use_feature_bias=True,
-                     data_format='simple',
-                     trainable=True,
-                     name=None):
-    layer = FlexConvolution(filters,
-                            activation=activation,
-                            kernel_initializer=kernel_initializer,
-                            position_bias_initializer=position_bias_initializer,
-                            features_bias_initializer=features_bias_initializer,
-                            use_feature_bias=use_feature_bias,
-                            data_format=data_format,
-                            trainable=trainable,
-                            name=name)
+def flex_convolution(
+        features,
+        positions,
+        neighborhoods,
+        filters,
+        activation=None,
+        kernel_initializer=None,
+        position_bias_initializer=tf.compat.v1.zeros_initializer(),
+        features_bias_initializer=tf.compat.v1.zeros_initializer(),
+        use_feature_bias=True,
+        data_format='simple',
+        trainable=True,
+        name=None):
+    layer = FlexConvolution(
+        filters,
+        activation=activation,
+        kernel_initializer=kernel_initializer,
+        position_bias_initializer=position_bias_initializer,
+        features_bias_initializer=features_bias_initializer,
+        use_feature_bias=use_feature_bias,
+        data_format=data_format,
+        trainable=trainable,
+        name=name)
 
     return layer.apply([features, positions, neighborhoods])
 
