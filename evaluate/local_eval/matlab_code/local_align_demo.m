@@ -34,7 +34,7 @@ VISUAL_WRONG=false;
 t_gt = [0   0  0];
 q_gt = [1   0    0    0];
 anc_idx = '0';
-pos_idx = '10';
+pos_idx = '110';
 
 
 
@@ -43,6 +43,7 @@ T_gt = [quat2rotm(q_gt), t_gt'];
                
 % load anc pc
 anc_pc_np = Utils.loadPointCloud(fullfile(DATA_FOLDER, sprintf('%s.bin', anc_idx)), 6); 
+anc_pc_np = anc_pc_np - mean(anc_pc_np);
 % load anc desc
 anc_xyz_desc = Utils.load_descriptors(fullfile(RES_FOLDER, sprintf('%s%s', anc_idx, ext_name)) , sum(FEATURE_DIM+4));
 
@@ -52,6 +53,7 @@ anc_xyz_desc = Utils.load_descriptors(fullfile(RES_FOLDER, sprintf('%s%s', anc_i
 
 % load pos pc
 pos_pc_np = Utils.loadPointCloud(fullfile(DATA_FOLDER, sprintf('%s.bin', pos_idx)), 6);  
+pos_pc_np = pos_pc_np - mean(pos_pc_np);
 % load pos desc
 pos_xyz_desc = Utils.load_descriptors(fullfile(RES_FOLDER, sprintf('%s%s', pos_idx, ext_name)), sum(FEATURE_DIM+4));
 
@@ -72,7 +74,7 @@ cloud2_pts = pos_kpts(matches12(:,2), :);
 
 
 
-[estimateRt, inlierIdx, trialCount] = ransacfitRt([cloud1_pts'; cloud2_pts'], 1.0, false);
+[estimateRt, inlierIdx, trialCount] = ransacfitRt([cloud1_pts'; cloud2_pts'], 0.1, false);
 
 
 try

@@ -130,7 +130,6 @@ def perform_pred(df, totalbatch, predictor, eval_config):
                     [totalbatch - batch, numpts, knn_ind.shape[2]], dtype=np.int32)
                 knn_ind = np.vstack([knn_ind, padzeros])
 
-        print(pc.shape)
         if knn_ind is not None:
             result = predictor(pc, knn_ind)[0]
         else:
@@ -174,7 +173,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--save_dir', type=str, default='evaluate/local_eval/demo_data/res_local')
     parser.add_argument(
-        '--ModelPath', type=str, help='Model to load (for evaluation)', default='logs/model-2530')
+        '--ModelPath', type=str, help='Model to load (for evaluation)', default='models/local/localmodel')
     parser.add_argument(
         '--dataset', type=str, help='oxford_lidar or oxford_dso', default='oxford_lidar')
     parser.add_argument(
@@ -182,11 +181,13 @@ if __name__ == '__main__':
     parser.add_argument(
         '--perform_nms', action='store_true', help='perform nms and save detected descriptors', default=False)
     parser.add_argument(
-        '--nms_rad', type=float, default=0.03)
+        '--nms_rad', type=float, default=0.05)
     parser.add_argument(
         '--nms_min_ratio', type=float, default=0.01)
     parser.add_argument(
         '--nms_max_kp', type=int, default=512)
+    parser.add_argument(
+        '--load', type=int, default=-1)
 
     args = parser.parse_args()
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
@@ -196,4 +197,7 @@ if __name__ == '__main__':
     except:
         print('no gpu device found!')
 
+    # args.ModelPath = 'models/local/localmodel'
+    # if args.load >= 0:
+    #     args.ModelPath = 'logs/model-{}'.format(args.load)
     pred_local_oxford(args)

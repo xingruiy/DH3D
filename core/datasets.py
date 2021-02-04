@@ -83,6 +83,8 @@ class Local_test_dataset(DataFlow):
         pcfile = self.testfile_list[index]
         cloud = load_single_pcfile(pcfile, dim=self.dim)
         ori_num = cloud.shape[0]
+        # print(cloud.shape)
+
         if ori_num != self.numpts:
             # downsample is not required if the pointcloud is already processed by the voxelsize around 0.2
             cloud, ori_num = get_fixednum_pcd(
@@ -91,7 +93,8 @@ class Local_test_dataset(DataFlow):
             choice_idx = np.random.choice(
                 cloud.shape[0], self.numpts, replace=False)
             cloud = cloud[choice_idx, :]
-
+        # plot_pc(cloud[:, 0:3], cloud[:, 3:])
+        # print(cloud.shape)
         name = os.path.basename(pcfile)
         ret = [cloud, name, ori_num]
         if self.knn > 0:

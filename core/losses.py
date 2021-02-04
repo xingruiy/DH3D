@@ -27,7 +27,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(BASE_DIR)
 
 
-def desc_local_loss(outs_dict, pos_r=0.05, search_r=1, margin=0.4, extra=False, neg_weight=5, **kwargs):
+def desc_local_loss(outs_dict, pos_r=0.01, search_r=0.3, margin=0.8, extra=True, neg_weight=5, **kwargs):
     """
     n-tuple loss
     """
@@ -65,7 +65,7 @@ def desc_local_loss(outs_dict, pos_r=0.05, search_r=1, margin=0.4, extra=False, 
     return loss_sum
 
 
-def local_detection_loss_nn(outs_dict, ar_th=0.3, det_k=16, ar_nn_k=5, pos_r=0.1, use_hardest_neg=True, **unused):
+def local_detection_loss_nn(outs_dict, ar_th=0.3, det_k=16, ar_nn_k=5, pos_r=0.01, use_hardest_neg=True, **unused):
     xyz0, xyz1 = tf.split(outs_dict['xyz'], 2, axis=0)
     feat0, feat1 = tf.split(outs_dict['feat'], 2, axis=0)
     sample_ind0, sample_ind1 = tf.split(

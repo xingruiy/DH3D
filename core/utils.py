@@ -108,8 +108,7 @@ def get_fixednum_pcd(cloud, targetnum, randsample=True, need_downsample=False, s
             pad_points = cloud[np.random.choice(
                 cloud.shape[0], size=num_to_pad, replace=True), :]
         else:
-            pad_points = np.ones([num_to_pad, 6],
-                                 dtype=np.float32) * 100000
+            pad_points = np.ones([num_to_pad, 6], dtype=np.float32) * 100000
 
         cloud = np.concatenate((cloud, pad_points), axis=0)
     return cloud, ori_num
@@ -151,7 +150,7 @@ def load_descriptor_bin(filename, dim=131, dtype=np.float32):
 def load_single_pcfile(filename, dim=3, dtype=np.float32):
     pc = np.fromfile(filename, dtype=dtype)
     pc = np.reshape(pc, (pc.shape[0] // dim, dim))
-    pc[:, 0:3] -= np.sum(pc[:, 0:3], axis=0)/8192
+    pc[:, 0:3] -= np.mean(pc[:, 0:3], axis=0)
     return pc
 
 
@@ -180,7 +179,7 @@ def downsample(pcd, voxelsize=0.03):
     return np.concatenate([cloud_down_p, cloud_down_c], axis=-1)
 
 
-def remove_noise(pcd, nb_points=4, radius=1.0):
+def remove_noise(pcd, nb_points=4, radius=5.0):
     cloud = o3d.geometry.PointCloud()
     cloud.points = o3d.utility.Vector3dVector(pcd)
     cl, ind = cloud.remove_radius_outlier(nb_points=nb_points, radius=radius)
@@ -194,6 +193,21 @@ def plot_pc(s):
     pcd.points = o3d.utility.Vector3dVector(s)
     origin_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(
         size=5.0, origin=[0, 0, 0])
+    o3d.visualization.draw_geometries(
+        [pcd, origin_frame])
+
+
+def plot_pc(s, c):
+    if not isinstance(s, np.ndarray):
+        s = np.asarray(s.points)
+    if not isinstance(c, np.ndarray):
+        c = np.asarray(c.points)
+
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(s)
+    pcd.colors = o3d.utility.Vector3dVector(c)
+    origin_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(
+        size=1.0, origin=[0, 0, 0])
     o3d.visualization.draw_geometries(
         [pcd, origin_frame])
 
