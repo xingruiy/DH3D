@@ -44,7 +44,7 @@ def get_eval_global_testdata(cfg, data_path, ref_gt_file):
     totalbatch = querybatch * (pos + neg + other_neg + 1)
 
     df = Global_test_dataset(
-        basedir=data_path, test_file=os.path.join(data_path, ref_gt_file))
+        basedir=data_path, pcd_dim=6, test_file=os.path.join(data_path, ref_gt_file))
     df = BatchData(df, totalbatch, remainder=True)
 
     df.reset_state()
@@ -76,8 +76,8 @@ def eval_retrieval(evalargs):
         # ['globaldesc'], output_weights
         output_names=['globaldesc'],
     )
-    ModelExporter(pred_config).export_compact('compact_graph.pb')
-    return
+    # ModelExporter(pred_config).export_compact('compact_graph.pb')
+    # return
 
     predictor = OfflinePredictor(pred_config)
 
@@ -117,15 +117,14 @@ def eval_retrieval(evalargs):
 
     # Evaluation recall:
     if evalargs.eval_recall:
-        evaluator = GlobalDesc_eval(result_savedir='./', desc_dir=save_dir,
-                                    database_file=os.path.join(
-                                        evalargs.data_path, evalargs.ref_gt_file),
-                                    query_file=os.path.join(
-                                        evalargs.data_path, evalargs.qry_gt_file),
-                                    max_num_nn=25)
+        evaluator = GlobalDesc_eval(
+            result_savedir='./', desc_dir=save_dir,
+            database_file=os.path.join(
+                evalargs.data_path, evalargs.ref_gt_file),
+            query_file=os.path.join(evalargs.data_path, evalargs.qry_gt_file),
+            max_num_nn=25)
         evaluator.evaluate()
         print("evaluation finished!\n")
-
     if evalargs.delete_tmp:
         # delete all the descriptors
         descdirs = [os.path.join(save_dir, f) for f in os.listdir(save_dir)]
@@ -146,14 +145,18 @@ if __name__ == '__main__':
                         default='models/global/globalmodel')
     # parser.add_argument('--data_path', type=str, default="../data/oxford_test_global")
     parser.add_argument('--data_path', type=str,
-                        default="evaluate/global_eval/demo_data/")
+                        default="data/")
     parser.add_argument('--ref_gt_file', type=str,
-                        default='global_ref_demo.pickle')
+                        default='training_samples.pickle')
     parser.add_argument('--qry_gt_file', type=str,
-                        default='global_query_demo.pickle')
+                        default='training_samples.pickle')
+    parser.add_argument('--load', type=str)
 
     parser.add_argument('--eval_recall', action='store_true', default=False)
     parser.add_argument('--delete_tmp', action='store_true', default=False)
 
     evalargs = parser.parse_args()
+    if evalargs.load:
+        evalargs.ModelPath = 'logs/model-{}'.format(evalargs.load)
+
     eval_retrieval(evalargs)

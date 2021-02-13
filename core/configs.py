@@ -125,12 +125,12 @@ class ConfigFactory(object):
         cfg.gl_dims = [256]
 
         # data
-        cfg.batch_size = 2
+        cfg.batch_size = 1
         cfg.num_pos = 2
-        cfg.num_neg = 8
+        cfg.num_neg = 4
         cfg.other_neg = True
         cfg.input_R = False
-        cfg.data_aug = ['Rotate1D', 'Jitter', 'RotateSmall']
+        cfg.data_aug = ['Rotate3D', 'Jitter']
 
         # loss
         cfg.add_local_loss = False

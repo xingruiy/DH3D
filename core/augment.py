@@ -2,6 +2,7 @@
 
 
 import numpy as np
+from scipy.spatial.transform import Rotation as R
 
 
 def get_augmentations_from_list(str_list, upright_axis=2):
@@ -15,7 +16,7 @@ def get_augmentations_from_list(str_list, upright_axis=2):
         return []
 
     augmentations = []
-    if 'Rotate1D' in str_list:
+    if 'RotateSmall' in str_list:
         if upright_axis == 1:
             augmentations.append(RotateY())
         elif upright_axis == 2:
@@ -80,7 +81,29 @@ class RotateZ(Augmentation):
         rotation_matrix = np.array([[cosval, sinval, 0],
                                     [-sinval, cosval, 0],
                                     [0, 0, 1]])
-        rotated_data = np.dot(data, rotation_matrix)
+        rotated_data = data
+        rotated_data[:, 0:3] = np.dot(data[:, 0:3], rotation_matrix)
+
+        return rotated_data
+
+
+class Rotate3D(Augmentation):
+    '''
+    Rotation perturbation around Z-axis.
+    '''
+
+    def random_rotation_3d(self, deflection=1):
+        alpha = np.random.uniform(low=-np.pi, high=np.pi)
+        beta = np.random.uniform(low=-np.pi, high=np.pi)
+        gamma = np.random.uniform(low=-np.pi, high=np.pi)
+
+        r = R.from_euler('zyx', [alpha, beta, gamma])
+        return r.as_matrix()
+
+    def apply(self, data):
+        rotation_matrix = self.random_rotation_3d()
+        rotated_data = data
+        rotated_data[:, 0:3] = np.dot(data[:, 0:3], rotation_matrix)
 
         return rotated_data
 

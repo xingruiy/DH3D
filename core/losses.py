@@ -189,7 +189,7 @@ def lazy_triplet_loss(global_descs, batch_size, num_pos, num_neg, global_triplet
 
 
 def lazy_quadruplet_loss(global_descs, batch_size, num_pos, num_neg, global_triplet_margin=0.5, global_quadruplet_margin=0.2, **kwargs):
-    outdim = global_descs.get_shape()[-1].value
+    outdim = global_descs.get_shape()[-1]
     qvec, posvec, negvec, othernegvec = tf.split(global_descs,
                                                  [batch_size, num_pos * batch_size,
                                                   num_neg * batch_size, batch_size],

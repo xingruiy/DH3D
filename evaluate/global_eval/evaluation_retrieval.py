@@ -106,7 +106,6 @@ class GlobalDesc_eval(object):
         if isquery:
             usedict = self.query_sets
             useseq = self.query_sequences
-
         else:
             usedict = self.database_sets
             useseq = self.database_sequences
@@ -117,6 +116,7 @@ class GlobalDesc_eval(object):
             pos = {'northing': [], 'easting': []}
             descriptors = []
             for pcd in seqinfo:
+                print(pcd)
                 pos['northing'].append(pcd['northing'])
                 pos['easting'].append(pcd['easting'])
                 pcd_filepath = pcd['query']

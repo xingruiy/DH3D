@@ -185,7 +185,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--nms_min_ratio', type=float, default=0.01)
     parser.add_argument(
-        '--nms_max_kp', type=int, default=512)
+        '--nms_max_kp', type=int, default=1024)
     parser.add_argument(
         '--load', type=int, default=-1)
 
@@ -198,6 +198,6 @@ if __name__ == '__main__':
         print('no gpu device found!')
 
     # args.ModelPath = 'models/local/localmodel'
-    # if args.load >= 0:
-    #     args.ModelPath = 'logs/model-{}'.format(args.load)
+    if args.load >= 0:
+        args.ModelPath = 'logs/model-{}'.format(args.load)
     pred_local_oxford(args)

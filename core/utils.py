@@ -13,13 +13,13 @@ from tensorpack import logger
 from termcolor import colored
 
 
-def single_nms(xyz, attention, nms_radius, min_response_ratio, max_keypoints, remove_noise=True):
+def single_nms(xyz, attention, nms_radius, min_response_ratio, max_keypoints, remove_noise=False):
     from sklearn.neighbors import NearestNeighbors
     nbrs = NearestNeighbors(n_neighbors=50, algorithm='ball_tree').fit(xyz)
     distances, indices = nbrs.kneighbors(xyz)
     if remove_noise:
         dist_check = distances[:, 7]
-        invalid = dist_check > 2.0
+        invalid = dist_check > 3.0
         attention[invalid] = 0.0
 
     knn_attention = attention[indices]
@@ -87,7 +87,7 @@ def log_config_info(config):
         json.dump(config, f)
 
 
-def get_fixednum_pcd(cloud, targetnum, randsample=True, need_downsample=False, sortby_dis=True):
+def get_fixednum_pcd(cloud, targetnum, randsample=True, need_downsample=False, sortby_dis=False):
     if need_downsample:
         cloud = downsample(cloud)
     ind = remove_noise(cloud[:, 0:3])
@@ -147,9 +147,25 @@ def load_descriptor_bin(filename, dim=131, dtype=np.float32):
     return desc
 
 
-def load_single_pcfile(filename, dim=3, dtype=np.float32):
+# def load_single_pcfile(filename, dim=3, dtype=np.float32):
+#     pc = np.fromfile(filename, dtype=dtype)
+#     pc = np.reshape(pc, (pc.shape[0] // dim, dim))
+#     c = np.mean(pc[:, 0:3], axis=0)
+#     pc[:, 0:3] -= c
+#     return pc, c
+
+
+def load_single_pcfile(filename, dim=3, normalize=True, dtype=np.float32):
     pc = np.fromfile(filename, dtype=dtype)
     pc = np.reshape(pc, (pc.shape[0] // dim, dim))
+    # print(np.mean(pc[:, 0:3], axis=0))
+    if normalize:
+        c = np.mean(pc[:, 0:3], axis=0)
+        pc[:, 0:3] -= c
+    return pc
+
+
+def normalize_point_cloud(pc):
     pc[:, 0:3] -= np.mean(pc[:, 0:3], axis=0)
     return pc
 
@@ -212,7 +228,7 @@ def plot_pc(s, c):
         [pcd, origin_frame])
 
 
-def plot_pc_pair(s, t):
+def plot_pc_pair2(s, t):
     if not isinstance(s, np.ndarray):
         s = np.asarray(s.points)
     if not isinstance(t, np.ndarray):
