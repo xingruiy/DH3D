@@ -71,13 +71,14 @@ def eval_retrieval(evalargs):
     # Set up graph:
     pred_config = PredictConfig(
         model=DH3D(model_configs),
-        session_init=get_model_loader(evalargs.ModelPath),
+        session_init=get_model_loader(
+            [evalargs.ModelPath, 'models/local/localmodel']),
         input_names=['anchor'],
         # ['globaldesc'], output_weights
-        output_names=['globaldesc'],
+        output_names=['globaldesc', 'xyz_feat_att'],
     )
-    # ModelExporter(pred_config).export_compact('compact_graph.pb')
-    # return
+    ModelExporter(pred_config).export_compact('compact_model.pb')
+    return
 
     predictor = OfflinePredictor(pred_config)
 

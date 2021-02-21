@@ -19,7 +19,7 @@ def single_nms(xyz, attention, nms_radius, min_response_ratio, max_keypoints, re
     distances, indices = nbrs.kneighbors(xyz)
     if remove_noise:
         dist_check = distances[:, 7]
-        invalid = dist_check > 3.0
+        invalid = dist_check > 2.0
         attention[invalid] = 0.0
 
     knn_attention = attention[indices]

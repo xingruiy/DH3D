@@ -14,7 +14,7 @@
 % limitations under the License.
 
 
-% Visualizes matches from oescriptors
+% Visualizes matches from descriptors
 %
 % i.e. no augmentations, etc
 clear;
@@ -48,7 +48,8 @@ ext_name = '_nms_res.bin';
 with_att = 1;
 
 % set the path to the testing set
-PC_FOLDER = './data/oxford_test_local';
+% PC_FOLDER = './data/oxford_test_local';
+PC_FOLDER = '../../../data/rgbd_dataset_freiburg3_long_office_household/model/'
 test_dataset = read_txt_oxford(fullfile(PC_FOLDER, 'oxford_test_local_gt.txt'));
 
 % set the path to save the evaluation results

@@ -18,11 +18,13 @@ import argparse
 import json
 import os
 import sys
+import glob
 
 import numpy as np
 import tensorflow as tf
 from core.configs import dotdict
-from core.datasets import Local_test_dataset
+from core.datasets import (Local_test_dataset, Local_test_tum_precompute,
+                           Toy_data_flow)
 from core.model import DH3D
 from core.utils import mkdir_p, single_nms
 from tensorpack.dataflow import BatchData
@@ -48,6 +50,24 @@ def get_eval_oxford_data(cfg={}):
     return df, totalbatch
 
 
+def get_eval_tum_precompute(cfg={}):
+    querybatch = cfg.batch_size
+    totalbatch = querybatch
+    df = Local_test_tum_precompute(
+        basedir='/home/xingrui/Workspace/SARDVS/out3/', dim=6,
+        numpts=cfg.get('num_points'))
+    df = BatchData(df, totalbatch, remainder=True)
+    df.reset_state()
+    return df, totalbatch
+
+
+def get_eval_toy_data(cfg={}):
+    totalbatch = 1
+    df = Toy_data_flow()
+    df = BatchData(df, 1, remainder=True)
+    return df, totalbatch
+
+
 def get_model_config(Model_Path):
     model_base = os.path.dirname(Model_Path)
     model_config_json = os.path.join(model_base, 'config.json')
@@ -64,7 +84,8 @@ def get_predictor(model_config, Model_Path):
     model_config.num_pos = 0
     model_config.num_neg = 0
     model_config.other_neg = False
-    model_config.batch_size = 4
+    model_config.batch_size = 1
+    model_config.detection = True
 
     if model_config.detection:
         output_vas = ['xyz_feat_att']
@@ -73,16 +94,17 @@ def get_predictor(model_config, Model_Path):
 
     input_vas = ['pointclouds/pointclouds']
     model = DH3D(model_config)
-    if model_config.num_points > 8192:
-        input_vas.append('knn_inds/knn_inds')
-        # input_vas = ['knn_inds/knn_inds']
+    # if model_config.num_points > 8192:
+    #     input_vas.append('knn_inds/knn_inds')
+    # input_vas = ['knn_inds/knn_inds']
     pred_config = PredictConfig(
         model=model,
-        session_init=get_model_loader(Model_Path),
+        session_init=get_model_loader(
+            [Model_Path]),
         input_names=input_vas,
         output_names=output_vas
     )
-    # ModelExporter(pred_config).export_compact('compact_graph.pb')
+    ModelExporter(pred_config).export_compact('local_model.pb')
     predictor = OfflinePredictor(pred_config)
     return predictor
 
@@ -160,10 +182,21 @@ def pred_local_oxford(eval_args):
 
     ####===============data ===================+##
     df, totalbatch = get_eval_oxford_data(model_config)
+    # df, totalbatch = get_eval_toy_data(model_config)
+    # df, totalbatch = get_eval_tum_precompute(model_config)
 
     ####=============== predict ===================+##
     totalnum = perform_pred(df, totalbatch, predictor, eval_args)
     print('Predict {} point clouds'.format(totalnum))
+
+
+def eval_on_exising(cfg):
+    pcd_file = glob.glob("/home/xingrui/Workspace/SARDVS/out3/*.bin")
+    for pcd_path in pcd_file:
+        pcd = np.fromfile(pcd_path, dtype=np.float32)
+        pcd = pcd.reshape(pcd.shape[0]//132, 132)
+        filename = os.path.basename(pcd_path)
+        pred_saveres(cfg, pcd, filename[:-4])
 
 
 if __name__ == '__main__':
@@ -181,11 +214,11 @@ if __name__ == '__main__':
     parser.add_argument(
         '--perform_nms', action='store_true', help='perform nms and save detected descriptors', default=False)
     parser.add_argument(
-        '--nms_rad', type=float, default=0.05)
+        '--nms_rad', type=float, default=0.04)
     parser.add_argument(
         '--nms_min_ratio', type=float, default=0.01)
     parser.add_argument(
-        '--nms_max_kp', type=int, default=1024)
+        '--nms_max_kp', type=int, default=512)
     parser.add_argument(
         '--load', type=int, default=-1)
 
@@ -197,7 +230,10 @@ if __name__ == '__main__':
     except:
         print('no gpu device found!')
 
+    eval_on_exising(args)
+    sys.exit(0)
+
     # args.ModelPath = 'models/local/localmodel'
     if args.load >= 0:
-        args.ModelPath = 'logs/model-{}'.format(args.load)
+        args.ModelPath = 'logs2/model-{}'.format(args.load)
     pred_local_oxford(args)

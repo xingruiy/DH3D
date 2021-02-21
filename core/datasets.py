@@ -61,6 +61,52 @@ def get_train_global_triplet(cfg={}):
     return df
 
 
+class Toy_data_flow(DataFlow):
+    def __iter__(self):
+        ret = np.fromfile(
+            '/home/xingrui/Workspace/SARDVS/data/test_point_cloud/0.bin', dtype=np.float32)
+        print(ret.shape)
+        cloud = np.reshape(ret, (ret.shape[0]//6, 6))
+        yield [cloud, "name", ret.shape[0]]
+
+
+class Local_test_tum_precompute(DataFlow):
+    def __init__(self, basedir, numpts=8192, knn_require=0, dim=6):
+        assert os.path.isdir(basedir)
+        self.basedir = basedir
+        self.testfile_list = self.get_list()
+        self.testfile_num = len(self.testfile_list)
+        self.knn = knn_require
+        self.numpts = numpts
+        self.dim = dim
+
+    def get_list(self):
+        pcl_files = glob.glob("{}/*.bin".format(self.basedir))
+        pcl_list = sorted(pcl_files)
+        print("{} point clouds to predict".format(len(pcl_list)))
+        return pcl_list
+
+    def __len__(self):
+        return len(self.testfile_list)
+
+    def load_test_pc(self, index):
+        pcfile = self.testfile_list[index]
+        cloud = load_single_pcfile(pcfile, dim=self.dim, normalize=False)
+        ori_num = cloud.shape[0]
+
+        name = os.path.basename(pcfile)
+        ret = [cloud, name, ori_num]
+        if self.knn > 0:
+            knn_ind, _ = get_knn(cloud[:, 0:3], self.knn)
+            ret.append(knn_ind)
+        return ret
+
+    def __iter__(self):
+        for i in range(0, self.testfile_num):
+            ret = self.load_test_pc(i)
+            yield ret
+
+
 class Local_test_dataset(DataFlow):
     def __init__(self, basedir, numpts=2 * 8192, knn_require=8, dim=6):
         assert os.path.isdir(basedir)
@@ -83,9 +129,11 @@ class Local_test_dataset(DataFlow):
 
     def load_test_pc(self, index):
         pcfile = self.testfile_list[index]
-        cloud = load_single_pcfile(pcfile, dim=self.dim)
+        cloud = load_single_pcfile(pcfile, dim=self.dim, normalize=True)
         ori_num = cloud.shape[0]
         # print(cloud[:10, :3])
+        # plot_pc(cloud[:, 0:3], cloud[:, 3:])
+        # print(cloud.shape)
         if ori_num != self.numpts:
             # downsample is not required if the pointcloud is already processed by the voxelsize around 0.2
             cloud, ori_num = get_fixednum_pcd(
@@ -94,8 +142,7 @@ class Local_test_dataset(DataFlow):
             choice_idx = np.random.choice(
                 cloud.shape[0], self.numpts, replace=False)
             cloud = cloud[choice_idx, :]
-        # plot_pc(cloud[:, 0:3], cloud[:, 3:])
-        # print(cloud.shape)
+
         name = os.path.basename(pcfile)
         ret = [cloud, name, ori_num]
         if self.knn > 0:
@@ -127,14 +174,15 @@ class Local_train_dataset_selfpair(RNGDataFlow):
     def __len__(self):
         return len(self.dict.keys())
 
-    def process_point_cloud(self, cloud):
+    def process_point_cloud(self, cloud, augment=False):
         cloud, _ = get_fixednum_pcd(
             cloud, self.numpts, randsample=True,
             need_downsample=False, sortby_dis=False)
 
         # augmentation
-        # for a in self.augmentation:
-        #     cloud = a.apply(cloud)
+        if augment:
+            for a in self.augmentation:
+                cloud = a.apply(cloud)
         return cloud
 
     def random_rotation(self):
@@ -162,47 +210,54 @@ class Local_train_dataset_selfpair(RNGDataFlow):
         split_dir = self.dict[ind]['dir']
         query = self.dict[ind]['query']
         positives = self.dict[ind]['positives']
-        if(len(positives) != 0):
-            pos = random.choice(positives)
-            pcfile1 = os.path.join(
-                self.basedir, split_dir, 'model',  '{}.bin'.format(query))
-            pcfile2 = os.path.join(
-                self.basedir, split_dir, 'model',  '{}.bin'.format(pos))
-            pc1 = load_single_pcfile(pcfile1, dim=self.dim, normalize=False)
-            pc2 = load_single_pcfile(pcfile2, dim=self.dim, normalize=False)
+        # if(len(positives) != 0):
+        #     pos = random.choice(positives)
+        #     pcfile1 = os.path.join(
+        #         self.basedir, split_dir, 'model',  '{}.bin'.format(query))
+        #     pcfile2 = os.path.join(
+        #         self.basedir, split_dir, 'model',  '{}.bin'.format(pos))
+        #     pc1 = load_single_pcfile(pcfile1, dim=self.dim, normalize=False)
+        #     pc2 = load_single_pcfile(pcfile2, dim=self.dim, normalize=False)
 
-            posefile1 = os.path.join(
-                self.basedir, split_dir, 'pose',  '{}.txt'.format(query))
-            posefile2 = os.path.join(
-                self.basedir, split_dir, 'pose', '{}.txt'.format(pos))
-            pose1 = np.loadtxt(posefile1)
-            pose2 = np.loadtxt(posefile2)
-            pose = np.matmul(np.linalg.inv(pose1), pose2)
+        #     # posefile1 = os.path.join(
+        #     #     self.basedir, split_dir, 'pose',  '{}.txt'.format(query))
+        #     # posefile2 = os.path.join(
+        #     #     self.basedir, split_dir, 'pose', '{}.txt'.format(pos))
+        #     # pose1 = np.loadtxt(posefile1)
+        #     # pose2 = np.loadtxt(posefile2)
+        #     # pose = np.matmul(np.linalg.inv(pose1), pose2)
 
-            rot = pose[:3, :3]
-            trans = pose[:3, 3].reshape(3, 1)
-            pc2 = np.expand_dims(pc2, axis=-1)
-            pc2[:, 0:3, :] = np.matmul(rot, pc2[:, 0:3, :]) + trans
-            pc2 = np.squeeze(pc2)
+        #     # rot = pose[:3, :3]
+        #     # trans = pose[:3, 3].reshape(3, 1)
+        #     # pc2 = np.expand_dims(pc2, axis=-1)
+        #     # pc2[:, 0:3, :] = np.matmul(rot, pc2[:, 0:3, :]) + trans
+        #     # pc2 = np.squeeze(pc2)
+        #     c1 = np.mean(pc1[:, :3], axis=0)
+        #     c2 = np.mean(pc2[:, :3], axis=0)
+        #     c = np.mean(np.vstack([c1, c2]), axis=0)
+        #     pc1[:, :3] -= c
+        #     pc2[:, :3] -= c
+        #     # print(c)
+        #     # pc1 = normalize_point_cloud(pc1)
+        #     # pc2 = normalize_point_cloud(pc2)
+        #     pc1 = self.process_point_cloud(pc2)  # augmentation
+        #     pc2 = self.process_point_cloud(pc2)  # augmentation
 
-            pc1 = self.process_point_cloud(
-                normalize_point_cloud(pc1))  # augmentation
-            pc2 = self.process_point_cloud(
-                normalize_point_cloud(pc2))  # augmentation
-
-        else:
-            pcfile = os.path.join(
-                self.basedir, split_dir, 'model',  '{}.bin'.format(query))
-            pcd = load_single_pcfile(pcfile, self.dim)
-            pc1 = self.process_point_cloud(pcd)  # augmentation
-            pc2 = self.process_point_cloud(pcd)  # augmentation
+        # else:
+        pcfile = os.path.join(
+            self.basedir, split_dir, 'model',  '{}.bin'.format(query))
+        pcd = load_single_pcfile(pcfile, self.dim)
+        pc1 = self.process_point_cloud(pcd, True)  # augmentation
+        pc2 = self.process_point_cloud(pcd, True)  # augmentation
 
         # 1D rotate
 
         rotation_matrix = self.random_rotation_3d()
-        pc2_trans = pc2.copy()
+        # pc2_trans = pc2.copy()
+        pc2_trans = pc2
         pc2_trans[:, 0:3] = np.dot(pc2[:, 0:3], rotation_matrix)
-        # plot_pc_pair2(pc1[:, 0:3], pc2[:, 0:3])
+        # plot_pc_pair(pc1[:, 0:3], pc1[:, 3:],
+        #              pc2[:, 0:3], pc2[:, 3:])
 
         # sample
         farthest_sampler = FarthestSampler()
